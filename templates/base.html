@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <meta name="description" content="个人文件管理系统 - 支持视频、图片、文档等多种文件类型的上传和管理">
+    <title>{% block title %}我的文件管理系统{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" crossorigin="anonymous">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <!-- 动态主题颜色 -->
+    <style>
+        :root {
+            --primary-color: {{ site_settings.primary_color|default:'#1890ff' }};
+            --secondary-color: {{ site_settings.secondary_color|default:'#52c41a' }};
+        }
+    </style>
+    
+    <!-- 动态背景图片 -->
+    {% if site_settings.background_image %}
+    <style>
+        body {
+            background-image: url('{{ site_settings.background_image.url }}');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+        }
+        
+        /* 添加半透明遮罩，提高内容可读性 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: -1;
+        }
+    </style>
+    {% endif %}
+    
+    <!-- 页面样式 -->
+    <style>
+        /* 优化卡片样式 */
+        .card {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        /* 优化导航栏 */
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* 优化消息提示 */
+        .messages {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 1050;
+            max-width: 400px;
+        }
+        
+        .messages .alert {
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                {% if site_settings.logo %}
+                <img src="{{ site_settings.logo.url }}" alt="Logo" height="30">
+                {% else %}
+                <i class="bi bi-folder2-open"></i> {{ site_settings.site_name|default:'我的文件管理系统' }}
+                {% endif %}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'videos' %}active fw-bold{% endif %}" href="{% url 'videos:index' %}">
+                            <i class="bi bi-play-circle"></i> <strong>视频</strong>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'files' %}active fw-bold{% endif %}" href="{% url 'files:list' %}">
+                            <i class="bi bi-file-earmark"></i> <strong>文件</strong>
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item" style="position:relative">
+                        <a class="nav-link" href="/notifications/" id="notif-bell" title="通知">
+                            <i class="bi bi-bell"></i>
+                            <span id="notif-badge" style="display:none;position:absolute;top:2px;right:0;background:#e74c3c;color:#fff;font-size:10px;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center"></span>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> 
+                            <strong>{{ user.username }}</strong>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                <i class="bi bi-person"></i> 个人中心
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'videos:upload' %}">
+                                <i class="bi bi-cloud-upload"></i> 上传视频
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'files:upload' %}">
+                                <i class="bi bi-file-earmark-arrow-up"></i> 上传文件
+                            </a></li>
+                            {% if user.is_admin_role %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/admin/">
+                                <i class="bi bi-gear"></i> 管理后台
+                            </a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">
+                                <i class="bi bi-box-arrow-right"></i> 退出登录
+                            </a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:login' %}">
+                            <i class="bi bi-box-arrow-in-right"></i> 登录
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:register' %}">
+                            <i class="bi bi-person-plus"></i> 注册
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-light mt-5 py-4">
+        <div class="container text-center">
+            <p class="mb-0">&copy; {% now "Y" %} {{ site_settings.site_name|default:'我的文件管理系统' }}. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    {% if user.is_authenticated %}
+    <script>
+    function checkNotif(){
+        fetch('/notifications/count/').then(r=>r.json()).then(d=>{
+            const b=document.getElementById('notif-badge');
+            if(b){if(d.count>0){b.textContent=d.count;b.style.display='';}else{b.style.display='none';}}
+        }).catch(()=>{});
+    }
+    checkNotif();setInterval(checkNotif,30000);
+    </script>
+    {% endif %}
+
+    <!-- 弹窗公告 -->
+    <div id="ann-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:9999;justify-content:center;align-items:center">
+        <div style="background:#fff;border-radius:14px;max-width:480px;width:90%;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative">
+            <div style="font-size:13px;color:#3b82f6;margin-bottom:8px">📢 公告通知</div>
+            <h3 id="ann-popup-title" style="margin:0 0 12px;font-size:18px;color:#1e293b"></h3>
+            <div id="ann-popup-content" style="color:#475569;font-size:14px;line-height:1.7;white-space:pre-wrap;max-height:300px;overflow-y:auto"></div>
+            <div style="margin-top:20px;display:flex;justify-content:space-between;align-items:center">
+                <label style="font-size:13px;color:#94a3b8;cursor:pointer;display:flex;align-items:center;gap:6px">
+                    <input type="checkbox" id="ann-dismiss-week"> 一周内不再弹出
+                </label>
+                <button onclick="closeAnnouncement()" style="background:#3b82f6;color:#fff;border:none;padding:8px 24px;border-radius:8px;cursor:pointer;font-size:14px">我知道了</button>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function(){
+        function getCk(n){const v=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)');return v?v.pop():'';}
+        function setCk(n,v,days){const d=new Date();d.setTime(d.getTime()+days*864e5);document.cookie=n+'='+v+';expires='+d.toUTCString()+';path=/';}
+        fetch('/api/announcement/').then(r=>r.json()).then(d=>{
+            if(!d.id) return;
+            if(sessionStorage.getItem('ann_closed_'+d.id)) return;
+            if(getCk('ann_dismiss')===String(d.id)) return;
+            document.getElementById('ann-popup-title').textContent=d.title;
+            document.getElementById('ann-popup-content').textContent=d.content;
+            document.getElementById('ann-overlay').style.display='flex';
+            document.getElementById('ann-overlay').dataset.annId=d.id;
+        }).catch(()=>{});
+        window.closeAnnouncement=function(){
+            const overlay=document.getElementById('ann-overlay');
+            const annId=overlay.dataset.annId;
+            sessionStorage.setItem('ann_closed_'+annId,'1');
+            if(document.getElementById('ann-dismiss-week').checked){
+                setCk('ann_dismiss',annId,7);
+            }
+            overlay.style.display='none';
+        };
+    })();
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

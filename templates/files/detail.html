@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ file_item.title }} - {{ site_settings.site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.file-detail-wrap{max-width:900px;margin:0 auto}
+.file-hero{background:#fff;border-radius:14px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:20px}
+.file-hero .back-link{color:#64748b;text-decoration:none;font-size:14px;display:inline-flex;align-items:center;gap:4px;margin-bottom:16px}
+.file-hero .back-link:hover{color:#334155}
+.file-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.file-title-row h2{font-size:22px;font-weight:700;margin:0;color:#1e293b;word-break:break-word}
+.file-type-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.meta-grid{display:flex;gap:24px;flex-wrap:wrap;padding:16px 20px;background:#f8fafc;border-radius:10px;margin-bottom:20px}
+.meta-item{display:flex;align-items:center;gap:6px;font-size:13px;color:#64748b}
+.meta-item i{font-size:15px}
+.meta-item .val{color:#334155;font-weight:500}
+
+.preview-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;margin-bottom:20px}
+.preview-header{padding:14px 20px;background:#f8fafc;font-size:14px;font-weight:600;color:#475569;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:6px}
+.preview-body{padding:20px}
+.preview-body pre{max-height:500px;overflow-y:auto;margin:0;font-size:13px;line-height:1.7;background:#fafafa;padding:16px;border-radius:8px;border:1px solid #f1f5f9}
+.preview-body img{max-width:100%;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.preview-body audio{width:100%;max-width:500px}
+.preview-placeholder{text-align:center;padding:40px 20px;color:#94a3b8}
+.preview-placeholder i{font-size:64px;display:block;margin-bottom:10px}
+
+.desc-card{background:#fff;border-radius:14px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:20px}
+.desc-card h6{font-size:14px;font-weight:600;color:#475569;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.desc-card p{font-size:14px;color:#64748b;line-height:1.7;margin:0}
+
+.action-bar{display:flex;gap:10px;flex-wrap:wrap}
+.action-bar .btn{border-radius:10px;padding:10px 24px;font-weight:600;font-size:14px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="file-detail-wrap">
+    <div class="file-hero">
+        <a href="{% url 'accounts:profile' %}" class="back-link"><i class="bi bi-arrow-left"></i> 返回个人中心</a>
+
+        <div class="file-title-row">
+            <h2>{{ file_item.title }}</h2>
+            {% if file_item.file_type == 'image' %}
+            <span class="file-type-tag" style="background:#dbeafe;color:#3b82f6"><i class="bi bi-image"></i> 图片</span>
+            {% elif file_item.file_type == 'document' %}
+            <span class="file-type-tag" style="background:#ede9fe;color:#8b5cf6"><i class="bi bi-file-earmark-text"></i> 文档</span>
+            {% elif file_item.file_type == 'archive' %}
+            <span class="file-type-tag" style="background:#fef3c7;color:#d97706"><i class="bi bi-file-earmark-zip"></i> 压缩包</span>
+            {% elif file_item.file_type == 'audio' %}
+            <span class="file-type-tag" style="background:#d1fae5;color:#059669"><i class="bi bi-music-note-beamed"></i> 音乐</span>
+            {% else %}
+            <span class="file-type-tag" style="background:#f1f5f9;color:#64748b"><i class="bi bi-file-earmark"></i> 文件</span>
+            {% endif %}
+        </div>
+
+        <div class="meta-grid">
+            <div class="meta-item"><i class="bi bi-person" style="color:#3b82f6"></i> <span class="val">{{ file_item.uploader.username }}</span></div>
+            <div class="meta-item"><i class="bi bi-calendar3" style="color:#8b5cf6"></i> {{ file_item.created_at|date:"Y-m-d H:i" }}</div>
+            <div class="meta-item"><i class="bi bi-hdd" style="color:#f59e0b"></i> <span class="val">{{ file_item.get_file_size_mb }} MB</span></div>
+            <div class="meta-item"><i class="bi bi-download" style="color:#10b981"></i> <span class="val">{{ file_item.download_count }}</span> 次下载</div>
+            <div class="meta-item"><i class="bi bi-eye" style="color:#6366f1"></i> <span class="val">{{ file_item.view_count }}</span> 次查看</div>
+            <div class="meta-item">
+                {% if file_item.visibility == 'private' %}
+                <span class="badge bg-secondary"><i class="bi bi-lock"></i> 私密</span>
+                {% else %}
+                <span class="badge bg-success"><i class="bi bi-globe"></i> 公开</span>
+                {% endif %}
+                {% if file_item.status == 'approved' %}
+                <span class="badge bg-primary">已通过</span>
+                {% elif file_item.status == 'pending' %}
+                <span class="badge bg-warning text-dark">待审核</span>
+                {% else %}
+                <span class="badge bg-danger">已驳回</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <a href="{% url 'files:download' file_item.id %}" class="btn btn-primary"><i class="bi bi-download"></i> 下载文件</a>
+            {% if is_uploader or is_admin %}
+            <button class="btn btn-outline-danger" onclick="deleteFile({{ file_item.id }})"><i class="bi bi-trash"></i> 删除</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 预览区 -->
+    <div class="preview-card">
+        <div class="preview-header"><i class="bi bi-eye"></i> 文件预览</div>
+        <div class="preview-body">
+            {% if file_item.file_type == 'image' %}
+            <div class="text-center">
+                <img src="{{ file_item.file.url }}" alt="{{ file_item.title }}">
+            </div>
+            {% elif file_item.file_type == 'document' and file_content %}
+            <pre>{{ file_content }}</pre>
+            {% elif file_item.file_type == 'audio' %}
+            <div class="text-center" style="padding:20px 0">
+                <i class="bi bi-music-note-beamed" style="font-size:48px;color:#10b981;display:block;margin-bottom:16px"></i>
+                <audio controls><source src="{{ file_item.file.url }}">浏览器不支持音频播放</audio>
+            </div>
+            {% else %}
+            <div class="preview-placeholder">
+                {% if file_item.file_type == 'document' %}
+                <i class="bi bi-file-earmark-text" style="color:#8b5cf6"></i>
+                {% elif file_item.file_type == 'archive' %}
+                <i class="bi bi-file-earmark-zip" style="color:#d97706"></i>
+                {% else %}
+                <i class="bi bi-file-earmark" style="color:#94a3b8"></i>
+                {% endif %}
+                <div>该文件类型暂不支持在线预览，请下载后查看</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 描述 -->
+    {% if file_item.description %}
+    <div class="desc-card">
+        <h6><i class="bi bi-text-paragraph"></i> 文件描述</h6>
+        <p>{{ file_item.description }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteFile(fileId) {
+    if (!confirm('确定要删除这个文件吗？删除后无法恢复！')) return;
+    fetch('/files/' + fileId + '/delete/', {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    }).then(function(r){ return r.json(); }).then(function(){
+        alert('文件已删除');
+        window.location.href = '{% url "accounts:profile" %}';
+    }).catch(function(){
+        alert('删除失败');
+    });
+}
+</script>
+{% endblock %}

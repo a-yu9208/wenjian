@@ -1,0 +1,41 @@
+# Systemd 服务文件示例
+# 将此文件复制到 /etc/systemd/system/boke.service
+
+[Unit]
+Description=Boke File Management System
+After=network.target mysql.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/path/to/your/project
+Environment="PATH=/path/to/your/project/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=config.settings"
+
+# 使用 gunicorn
+ExecStart=/path/to/your/project/venv/bin/gunicorn \
+    --workers 4 \
+    --timeout 300 \
+    --bind 127.0.0.1:8000 \
+    --log-file /var/log/boke/gunicorn.log \
+    --access-logfile /var/log/boke/gunicorn-access.log \
+    --error-logfile /var/log/boke/gunicorn-error.log \
+    config.wsgi:application
+
+# 重启配置
+Restart=always
+RestartSec=10
+StartLimitInterval=3
+
+# 日志
+StandardOutput=append:/var/log/boke/systemd.log
+StandardError=append:/var/log/boke/systemd-error.log
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+
+

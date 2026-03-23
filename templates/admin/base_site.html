@@ -1,0 +1,136 @@
+{% extends "admin/base.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+// 全局审核函数（用于列表页）
+function approveVideoById(id) {
+    if (!confirm('确定要通过此视频审核吗？')) return;
+    
+    $.ajax({
+        url: '/admin/videos/video/ajax-approve/',
+        method: 'POST',
+        data: {
+            'video_id': id,
+            'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        success: function(data) {
+            alert('✓ 视频已通过审核');
+            location.reload();
+        },
+        error: function(xhr) {
+            alert('✗ 操作失败');
+            location.reload();
+        }
+    });
+}
+
+function rejectVideoById(id) {
+    if (!confirm('确定要驳回此视频吗？')) return;
+    
+    $.ajax({
+        url: '/admin/videos/video/ajax-reject/',
+        method: 'POST',
+        data: {
+            'video_id': id,
+            'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        success: function(data) {
+            alert('✗ 视频已驳回');
+            location.reload();
+        },
+        error: function(xhr) {
+            alert('✗ 操作失败');
+            location.reload();
+        }
+    });
+}
+
+function makePublicById(id) {
+    if (!confirm('确定要将此私密视频转为公开吗？需要管理员审核。')) return;
+    
+    $.ajax({
+        url: '/admin/videos/video/ajax-make-public/',
+        method: 'POST',
+        data: {
+            'video_id': id,
+            'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        success: function(data) {
+            alert('✓ 视频已转为公开，等待审核');
+            location.reload();
+        },
+        error: function(xhr) {
+            alert('✗ 操作失败');
+            location.reload();
+        }
+    });
+}
+
+// 文件审核函数
+function approveFileById(id) {
+    if (!confirm('确定要通过此文件审核吗？')) return;
+    
+    $.ajax({
+        url: '/admin/files/fileitem/ajax-approve/',
+        method: 'POST',
+        data: {
+            'file_id': id,
+            'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        success: function(data) {
+            alert('✓ 文件已通过审核');
+            location.reload();
+        },
+        error: function(xhr) {
+            alert('✗ 操作失败');
+            location.reload();
+        }
+    });
+}
+
+function rejectFileById(id) {
+    if (!confirm('确定要驳回此文件吗？')) return;
+    
+    $.ajax({
+        url: '/admin/files/fileitem/ajax-reject/',
+        method: 'POST',
+        data: {
+            'file_id': id,
+            'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        success: function(data) {
+            alert('✗ 文件已驳回');
+            location.reload();
+        },
+        error: function(xhr) {
+            alert('✗ 操作失败');
+            location.reload();
+        }
+    });
+}
+
+function makeFilePublicById(id) {
+    if (!confirm('确定要将此私密文件转为公开吗？需要管理员审核。')) return;
+    
+    $.ajax({
+        url: '/admin/files/fileitem/ajax-make-public/',
+        method: 'POST',
+        data: {
+            'file_id': id,
+            'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        success: function(data) {
+            alert('✓ 文件已转为公开，等待审核');
+            location.reload();
+        },
+        error: function(xhr) {
+            alert('✗ 操作失败');
+            location.reload();
+        }
+    });
+}
+</script>
+{% endblock %}
+

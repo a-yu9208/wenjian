@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.log
+logs/
+media/
+staticfiles/
+.kiro/
+.env
+.venv/
+venv/

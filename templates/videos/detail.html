@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ video.title }} - {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <!-- 返回按钮 -->
+        <div class="mb-3">
+            <a href="{% url 'videos:index' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> 返回主页
+            </a>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h3>{{ video.title }}</h3>
+                    {% if is_uploader or is_admin %}
+                    <div>
+                        <button class="btn btn-sm btn-danger" onclick="deleteVideo({{ video.id }})">
+                            <i class="bi bi-trash"></i> 删除
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 视频播放器 -->
+                <div class="ratio ratio-16x9 mb-4">
+                    <video id="videoPlayer" controls controlsList="nodownload" preload="metadata">
+                        <source src="{% url 'videos:play' video.id %}" type="video/mp4">
+                        您的浏览器不支持视频播放。
+                    </video>
+                    <div class="position-absolute top-50 start-50 translate-middle" id="videoLoader" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 视频信息 -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <p class="text-muted">{{ video.description|default:'暂无简介' }}</p>
+                        <div class="d-flex gap-3">
+                            <span><i class="bi bi-person"></i> {{ video.uploader.username }}</span>
+                            <span><i class="bi bi-eye"></i> {{ video.view_count }} 次观看</span>
+                            <span><i class="bi bi-clock"></i> {{ video.created_at|date:"Y-m-d H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var video = document.getElementById('videoPlayer');
+    var loader = document.getElementById('videoLoader');
+    
+    // 显示加载状态
+    video.addEventListener('loadstart', function() {
+        loader.style.display = 'block';
+    });
+    
+    // 隐藏加载状态
+    video.addEventListener('canplay', function() {
+        loader.style.display = 'none';
+    });
+    
+    // 错误处理
+    video.addEventListener('error', function(e) {
+        loader.style.display = 'none';
+        console.error('视频加载错误:', e);
+        alert('视频加载失败，请刷新页面重试');
+    });
+    
+    // 视频加载超时（增加到3分钟，对于大文件）
+    setTimeout(function() {
+        if (video.readyState < 2 && loader.style.display !== 'none') {
+            console.log('视频加载可能需要更长时间，请耐心等待...');
+            // 不提示超时，让浏览器继续加载
+        }
+    }, 180000); // 3分钟超时
+});
+
+function deleteVideo(videoId) {
+    if (!confirm('确定要删除这个视频吗？')) return;
+    
+    $.ajax({
+        url: '/videos/' + videoId + '/delete/',
+        method: 'DELETE',
+        success: function(data) {
+            alert('视频已删除');
+            window.location.href = '/';
+        },
+        error: function(xhr) {
+            alert('删除失败：' + xhr.responseJSON.error);
+        }
+    });
+}
+</script>
+{% endblock %}
+
+
