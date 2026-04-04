@@ -1,10 +1,25 @@
 package com.example.yueyeushaokaojiaoziguan.merchant
 
-enum class MerchantTab(val label: String, val shortLabel: String) {
-    Home("首页", "首"),
-    Dishes("菜品", "菜"),
-    Orders("订单", "单"),
-    Tables("桌台", "桌")
+enum class MerchantTab(val label: String) {
+    Home("首页"),
+    Orders("订单"),
+    Functions("功能")
+}
+
+enum class HomeSubTab(val label: String) {
+    Pending("待处理"),
+    QuickServe("快速上菜"),
+    Cooking("制作中"),
+    AwaitingPayment("待结账")
+}
+
+enum class FunctionEntry(val label: String, val icon: String) {
+    Revenue("营业额统计", "📊"),
+    DishManage("菜品管理", "🍖"),
+    CategorySetting("分类设置", "📂"),
+    TableManage("桌台管理", "🪑"),
+    PointsActivity("积分活动", "🎁"),
+    Profile("个人信息", "👤")
 }
 
 data class StatCard(
@@ -24,7 +39,21 @@ data class DishItem(
     val price: String,
     val stock: Int,
     val soldToday: Int,
-    val type: String
+    val type: String,
+    val imageUri: String = "",
+    val description: String = "",
+    val minOrder: Int = 1,
+    val quickServe: Boolean = false,
+    val discountEnabled: Boolean = false,
+    val discountPrice: String = ""
+)
+
+data class OrderDishItem(
+    val name: String,
+    val quantity: Int,
+    val note: String = "",
+    val served: Boolean = false,
+    val quickServe: Boolean = false
 )
 
 data class OrderItem(
@@ -32,7 +61,12 @@ data class OrderItem(
     val summary: String,
     val amount: String,
     val status: String,
-    val time: String
+    val time: String,
+    val area: String = "",
+    val isAppend: Boolean = false,
+    val appendIndex: Int = 0,
+    val dishes: List<OrderDishItem> = emptyList(),
+    val utensilCount: Int = 0
 )
 
 data class TableItem(
@@ -55,5 +89,10 @@ data class DishDraft(
     val category: String = "烧烤",
     val price: String = "",
     val stock: String = "10",
-    val type: String = "单品"
+    val type: String = "单品",
+    val description: String = "",
+    val minOrder: String = "1",
+    val quickServe: Boolean = false,
+    val discountEnabled: Boolean = false,
+    val discountPrice: String = ""
 )

@@ -2,12 +2,21 @@ package com.example.yueyeushaokaojiaoziguan.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Ember80 = Color(0xFFFFD8B4)
-val Clay80 = Color(0xFFE8C7B1)
-val Amber80 = Color(0xFFFFE3A1)
+// 主色 — 暖橙
+val BrandOrange = Color(0xFFFF6B35)
+val BrandOrangeDark = Color(0xFFE85D2C)
+val BrandAmber = Color(0xFFFFAB40)
 
-val Ember40 = Color(0xFF9A3412)
-val Clay40 = Color(0xFF7C2D12)
-val Amber40 = Color(0xFFD97706)
-val CreamBackground = Color(0xFFFFFBF5)
-val CardSurface = Color(0xFFFFF7ED)
+// 深色
+val DarkCharcoal = Color(0xFF1A1A2E)
+val MediumGray = Color(0xFF4A4A5A)
+
+// 浅色背景
+val WarmWhite = Color(0xFFFAF8F5)
+val SoftCream = Color(0xFFFFF3E0)
+
+// 状态色
+val StatusGreen = Color(0xFF2E7D32)
+val StatusRed = Color(0xFFD32F2F)
+val StatusBlue = Color(0xFF1565C0)
+val StatusYellow = Color(0xFFF9A825)

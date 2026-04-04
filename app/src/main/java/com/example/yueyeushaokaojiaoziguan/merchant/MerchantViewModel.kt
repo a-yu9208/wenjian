@@ -378,8 +378,8 @@ class MerchantViewModel(
 
     private fun nextOrderStatus(status: String): String {
         return when (status) {
-            "待处理" -> "烧烤中"
-            "烧烤中" -> "待结账"
+            "待处理" -> "制作中"
+            "制作中" -> "待结账"
             "待结账" -> "已完成"
             else -> "待处理"
         }

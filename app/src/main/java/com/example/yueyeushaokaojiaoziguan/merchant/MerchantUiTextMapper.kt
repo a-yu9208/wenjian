@@ -14,7 +14,7 @@ object MerchantUiTextMapper {
     fun localizeOrderStatus(status: String): String {
         return when (status.trim()) {
             "Pending", "pending", "待处理" -> "待处理"
-            "Grilling", "grilling", "In Progress", "制作中", "烧烤中" -> "烧烤中"
+            "Grilling", "grilling", "In Progress", "制作中", "烧烤中" -> "制作中"
             "Checkout", "Pending Bill", "pending_bill", "待结账" -> "待结账"
             "Paid", "Completed", "已完成", "completed" -> "已完成"
             else -> status.ifBlank { "待处理" }

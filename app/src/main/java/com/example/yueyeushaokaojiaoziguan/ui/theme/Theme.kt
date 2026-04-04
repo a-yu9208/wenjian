@@ -12,24 +12,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Ember80,
-    secondary = Clay80,
-    tertiary = Amber80
+    primary = BrandAmber,
+    secondary = BrandOrange,
+    tertiary = BrandAmber,
+    background = DarkCharcoal,
+    surface = Color(0xFF2A2A3E),
+    onPrimary = DarkCharcoal,
+    onBackground = Color(0xFFF5F5F5),
+    onSurface = Color(0xFFF5F5F5)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Ember40,
-    secondary = Clay40,
-    tertiary = Amber40,
-    background = CreamBackground,
+    primary = BrandOrange,
+    onPrimary = Color.White,
+    secondary = BrandOrangeDark,
+    tertiary = BrandAmber,
+    background = WarmWhite,
     surface = Color.White,
-    surfaceVariant = CardSurface
+    surfaceVariant = SoftCream,
+    onBackground = DarkCharcoal,
+    onSurface = DarkCharcoal,
+    onSurfaceVariant = MediumGray
 )
 
 @Composable
 fun YueyeushaokaojiaoziguanTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -38,7 +46,6 @@ fun YueyeushaokaojiaoziguanTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
