@@ -1,8 +1,8 @@
 package com.example.yueyeushaokaojiaoziguan.merchant
 
 object MerchantApiConfig {
-    const val useMockData = true
-    const val baseApiUrl = "https://api.example.com"
+    const val useMockData = false
+    const val baseApiUrl = "https://api.teselx.cn"
 
     const val dashboardPath = "/merchant/dashboard"
     const val dishesPath = "/merchant/dishes"
