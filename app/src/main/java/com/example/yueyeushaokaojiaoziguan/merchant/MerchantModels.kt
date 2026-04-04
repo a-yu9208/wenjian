@@ -1,10 +1,10 @@
 package com.example.yueyeushaokaojiaoziguan.merchant
 
 enum class MerchantTab(val label: String, val shortLabel: String) {
-    Home("Home", "H"),
-    Dishes("Dishes", "D"),
-    Orders("Orders", "O"),
-    Tables("Tables", "T")
+    Home("首页", "首"),
+    Dishes("菜品", "菜"),
+    Orders("订单", "单"),
+    Tables("桌台", "桌")
 }
 
 data class StatCard(
@@ -48,4 +48,12 @@ data class TableQrDraft(
     val tableNumber: String = "8",
     val target: String = "h5",
     val baseUrl: String = "https://order.example.com"
+)
+
+data class DishDraft(
+    val name: String = "",
+    val category: String = "烧烤",
+    val price: String = "",
+    val stock: String = "10",
+    val type: String = "单品"
 )

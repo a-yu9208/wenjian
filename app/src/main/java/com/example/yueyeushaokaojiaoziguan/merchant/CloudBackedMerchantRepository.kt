@@ -3,13 +3,46 @@ package com.example.yueyeushaokaojiaoziguan.merchant
 class CloudBackedMerchantRepository(
     private val bridge: MerchantCloudBridge
 ) : MerchantRepository {
-    override fun getDashboardStats(): List<StatCard> = MerchantSampleData.dashboardStats
+    override suspend fun getDashboardStats(): List<StatCard> = bridge.fetchDashboardStats()
 
-    override fun getQuickEntries(): List<QuickEntry> = MerchantSampleData.quickEntries
+    override suspend fun getQuickEntries(): List<QuickEntry> = MerchantSampleData.quickEntries
 
-    override fun getDishes(): List<DishItem> = MerchantSampleData.dishes
+    override suspend fun getDishes(): List<DishItem> = bridge.fetchDishes().map { dish ->
+        dish.copy(
+            category = MerchantUiTextMapper.localizeDishCategory(dish.category),
+            type = MerchantUiTextMapper.localizeDishType(dish.type)
+        )
+    }
 
-    override fun getOrders(): List<OrderItem> = MerchantSampleData.orders
+    override suspend fun getOrders(): List<OrderItem> = bridge.fetchOrders().map { order ->
+        order.copy(status = MerchantUiTextMapper.localizeOrderStatus(order.status))
+    }
 
-    override fun getTables(): List<TableItem> = MerchantSampleData.tables
+    override suspend fun getTables(): List<TableItem> = bridge.fetchTables().map { table ->
+        table.copy(
+            area = MerchantUiTextMapper.localizeArea(table.area),
+            status = MerchantUiTextMapper.localizeTableStatus(table.status),
+            qrTarget = MerchantUiTextMapper.localizeQrTarget(table.qrTarget)
+        )
+    }
+
+    override suspend fun generateTableQrCode(request: TableQrRequest): TableQrResponse {
+        return bridge.generateTableQrCode(request)
+    }
+
+    override suspend fun pushOrderStatus(tableLabel: String, status: String) {
+        bridge.pushOrderStatus(tableLabel, status)
+    }
+
+    override suspend fun pushDishStock(name: String, stock: Int) {
+        bridge.pushDishStock(name, stock)
+    }
+
+    override suspend fun createDish(dish: DishItem) {
+        bridge.createDish(dish)
+    }
+
+    override suspend fun pushTableStatus(label: String, status: String) {
+        bridge.pushTableStatus(label, status)
+    }
 }

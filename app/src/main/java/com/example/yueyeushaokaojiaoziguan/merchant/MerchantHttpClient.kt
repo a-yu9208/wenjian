@@ -2,6 +2,8 @@ package com.example.yueyeushaokaojiaoziguan.merchant
 
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.net.URL
 
 class MerchantHttpClient(
@@ -47,8 +49,12 @@ class MerchantHttpClient(
                     code = code
                 )
             }
+        } catch (error: UnknownHostException) {
+            MerchantApiResult.Error("无法连接服务器，请检查域名或网络")
+        } catch (error: SocketTimeoutException) {
+            MerchantApiResult.Error("请求超时，请稍后重试")
         } catch (error: Exception) {
-            MerchantApiResult.Error(error.message ?: "Network request failed")
+            MerchantApiResult.Error(error.message ?: "网络请求失败")
         } finally {
             connection.disconnect()
         }

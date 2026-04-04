@@ -1,9 +1,9 @@
 package com.example.yueyeushaokaojiaoziguan.merchant
 
 object SingleTenantMerchantConfig {
-    const val merchantName = "Yeyue Shaokao"
-    const val merchantModeLabel = "Single Merchant Mode"
-    const val merchantAccount = "owner"
+    const val merchantName = "夜月烧烤"
+    const val merchantModeLabel = "单店模式"
+    const val merchantAccount = "店主账号"
     const val customerH5BaseUrl = "https://order.example.com"
 
     fun buildCustomerOrderUrl(

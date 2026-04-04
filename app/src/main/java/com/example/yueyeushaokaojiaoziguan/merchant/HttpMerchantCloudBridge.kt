@@ -1,7 +1,5 @@
 package com.example.yueyeushaokaojiaoziguan.merchant
 
-import java.io.BufferedReader
-
 class HttpMerchantCloudBridge(
     private val baseUrl: String = MerchantApiConfig.baseApiUrl
 ) : MerchantCloudBridge {
@@ -60,7 +58,7 @@ class HttpMerchantCloudBridge(
               "baseUrl": "${request.baseUrl}"
             }
         """.trimIndent()
-        httpClient.post(MerchantApiConfig.tableQrPath, requestBody)
+        val response = httpClient.post(MerchantApiConfig.tableQrPath, requestBody)
         val targetUrl = if (request.target == "h5") {
             SingleTenantMerchantConfig.buildCustomerOrderUrl(
                 section = request.section,
@@ -71,9 +69,63 @@ class HttpMerchantCloudBridge(
             """{"t":"table","s":"${request.section}","n":"${request.number}"}"""
         }
 
-        return TableQrResponse(
-            fileId = "http-placeholder-file-id",
-            targetUrl = targetUrl
-        )
+        return when (response) {
+            is MerchantApiResult.Success -> MerchantJsonParsers.parseTableQrResponse(response.data)
+                ?: TableQrResponse(
+                    fileId = "http-placeholder-file-id",
+                    targetUrl = targetUrl
+                )
+            is MerchantApiResult.Error -> TableQrResponse(
+                fileId = "http-placeholder-file-id",
+                targetUrl = targetUrl
+            )
+        }
+    }
+
+    override suspend fun pushOrderStatus(tableLabel: String, status: String) {
+        val requestBody = """
+            {
+              "action": "updateOrderStatus",
+              "tableLabel": "$tableLabel",
+              "status": "$status"
+            }
+        """.trimIndent()
+        httpClient.post(MerchantApiConfig.orderActionsPath, requestBody)
+    }
+
+    override suspend fun pushDishStock(name: String, stock: Int) {
+        val requestBody = """
+            {
+              "action": "updateStock",
+              "name": "$name",
+              "stock": $stock
+            }
+        """.trimIndent()
+        httpClient.post(MerchantApiConfig.dishActionsPath, requestBody)
+    }
+
+    override suspend fun createDish(dish: DishItem) {
+        val requestBody = """
+            {
+              "action": "createDish",
+              "name": "${dish.name}",
+              "category": "${dish.category}",
+              "price": "${dish.price}",
+              "stock": ${dish.stock},
+              "type": "${dish.type}"
+            }
+        """.trimIndent()
+        httpClient.post(MerchantApiConfig.dishActionsPath, requestBody)
+    }
+
+    override suspend fun pushTableStatus(label: String, status: String) {
+        val requestBody = """
+            {
+              "action": "updateTableStatus",
+              "label": "$label",
+              "status": "$status"
+            }
+        """.trimIndent()
+        httpClient.post(MerchantApiConfig.orderActionsPath, requestBody)
     }
 }

@@ -1,13 +1,38 @@
 package com.example.yueyeushaokaojiaoziguan.merchant
 
 class MockMerchantRepository : MerchantRepository {
-    override fun getDashboardStats(): List<StatCard> = MerchantSampleData.dashboardStats
+    override suspend fun getDashboardStats(): List<StatCard> = MerchantSampleData.dashboardStats
 
-    override fun getQuickEntries(): List<QuickEntry> = MerchantSampleData.quickEntries
+    override suspend fun getQuickEntries(): List<QuickEntry> = MerchantSampleData.quickEntries
 
-    override fun getDishes(): List<DishItem> = MerchantSampleData.dishes
+    override suspend fun getDishes(): List<DishItem> = MerchantSampleData.dishes
 
-    override fun getOrders(): List<OrderItem> = MerchantSampleData.orders
+    override suspend fun getOrders(): List<OrderItem> = MerchantSampleData.orders
 
-    override fun getTables(): List<TableItem> = MerchantSampleData.tables
+    override suspend fun getTables(): List<TableItem> = MerchantSampleData.tables
+
+    override suspend fun generateTableQrCode(request: TableQrRequest): TableQrResponse {
+        val targetUrl = if (request.target == "h5") {
+            SingleTenantMerchantConfig.buildCustomerOrderUrl(
+                section = request.section,
+                tableNumber = request.number.toString(),
+                baseUrl = request.baseUrl
+            )
+        } else {
+            """{"t":"table","s":"${request.section}","n":"${request.number}"}"""
+        }
+
+        return TableQrResponse(
+            fileId = "mock-file-id",
+            targetUrl = targetUrl
+        )
+    }
+
+    override suspend fun pushOrderStatus(tableLabel: String, status: String) = Unit
+
+    override suspend fun pushDishStock(name: String, stock: Int) = Unit
+
+    override suspend fun createDish(dish: DishItem) = Unit
+
+    override suspend fun pushTableStatus(label: String, status: String) = Unit
 }

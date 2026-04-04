@@ -6,6 +6,8 @@ object MerchantEndpointNotes {
         "GET ${MerchantApiConfig.dishesPath}",
         "GET ${MerchantApiConfig.ordersPath}",
         "GET ${MerchantApiConfig.tablesPath}",
-        "POST ${MerchantApiConfig.tableQrPath}"
+        "POST ${MerchantApiConfig.tableQrPath}",
+        "POST ${MerchantApiConfig.orderActionsPath}",
+        "POST ${MerchantApiConfig.dishActionsPath}"
     )
 }

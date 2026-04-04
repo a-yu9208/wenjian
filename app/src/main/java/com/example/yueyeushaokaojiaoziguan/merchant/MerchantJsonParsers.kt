@@ -94,4 +94,17 @@ object MerchantJsonParsers {
             }
         }
     }
+
+    fun parseTableQrResponse(json: String): TableQrResponse? {
+        if (json.isBlank()) return null
+        val root = JSONObject(json)
+        val data = root.optJSONObject("data") ?: root
+        val fileId = data.optString("fileId")
+        val targetUrl = data.optString("targetUrl")
+        if (fileId.isBlank() && targetUrl.isBlank()) return null
+        return TableQrResponse(
+            fileId = fileId,
+            targetUrl = targetUrl
+        )
+    }
 }
