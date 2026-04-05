@@ -7,9 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,10 +46,9 @@ fun FunctionsScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier: M
     if (activePage != null) {
         FunctionSubPage(activePage, uiState, vm, { activePageName = null }, modifier)
     } else {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2), modifier = modifier.fillMaxSize(),
+        LazyColumn(
+            modifier = modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             itemsIndexed(FunctionEntry.entries.toList()) { index, entry ->
@@ -58,7 +56,7 @@ fun FunctionsScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier: M
                 LaunchedEffect(Unit) { visible.value = true }
                 AnimatedVisibility(
                     visible.value,
-                    enter = scaleIn(tween(350, delayMillis = index * 60), initialScale = 0.7f) + fadeIn(tween(350, delayMillis = index * 60))
+                    enter = slideInHorizontally(tween(300, delayMillis = index * 60)) { it / 3 } + fadeIn(tween(300, delayMillis = index * 60))
                 ) {
                     FunctionCard(entry) { activePageName = entry.name }
                 }
@@ -88,10 +86,11 @@ private fun FunctionCard(entry: FunctionEntry, onClick: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) { Text(entry.icon, fontSize = 24.sp) }
             Spacer(Modifier.width(14.dp))
-            Column {
+            Column(Modifier.weight(1f)) {
                 Text(entry.label, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text(entry.desc, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            Text("›", fontSize = 22.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
