@@ -290,13 +290,35 @@ function goBill() {
   const total = subtotal + utensilTotal - deduct;
   html += `<div class="bill-row total"><span>应付</span><span>¥${total}</span></div>`;
   html += `<div class="bill-notice">请找服务员付款</div>`;
-  html += `<button class="bill-submit" onclick="notifyMerchant()">已通知商家</button></div>`;
+  html += `<div class="phone-input-wrap">
+    <input type="tel" id="checkoutPhone" class="phone-input" placeholder="输入手机号获得积分（选填）" maxlength="11"
+      value="${localStorage.getItem('userPhone') || ''}">
+  </div>`;
+  html += `<button class="bill-submit" onclick="notifyMerchant()">确认结账</button></div>`;
   wrap.innerHTML = html;
   show('bill');
 }
 
-function notifyMerchant() {
-  alert('已通知商家，请等待服务员前来收款');
+async function notifyMerchant() {
+  const phoneEl = document.getElementById('checkoutPhone');
+  const phone = phoneEl ? phoneEl.value.trim() : '';
+  if (phone && !/^1\d{10}$/.test(phone)) { showToast('手机号格式不对'); return; }
+  if (phone) localStorage.setItem('userPhone', phone);
+
+  // 调后端结账
+  for (const oid of serverOrderIds) {
+    try {
+      const res = await fetch(`${API_BASE}/customer/checkout?orderId=${oid}&phone=${encodeURIComponent(phone)}`, { method: 'POST' });
+      const json = await res.json();
+      if (json.success && json.data && json.data.pointsEarned > 0) {
+        showToast(`获得 ${json.data.pointsEarned} 积分，总积分 ${json.data.totalPoints}`);
+        MOCK.user.points = json.data.totalPoints;
+        if (phone) MOCK.user.phone = phone;
+      }
+    } catch (e) {}
+  }
+
+  if (!serverOrderIds.length) showToast('已通知商家，请等待服务员收款');
   show('welcome');
   const app = $('#welcome');
   app.innerHTML = `<h1>🔥 ${MOCK.shopName}</h1><div class="sub">${MOCK.table.area} ${MOCK.table.number}号桌</div><div class="sub">等待商家确认收款...</div>`;
@@ -319,11 +341,31 @@ function goMe() {
 async function loadPointsLog() {
   const el = document.getElementById('points-log');
   if (!el) return;
-  // 目前后端没有积分接口，显示本地数据
-  el.innerHTML = `
-    <div class="me-row"><span>消费获得</span><span>+100</span></div>
-    <div class="me-row"><span>抵扣使用</span><span>-30</span></div>
-    <div class="me-row"><span>商家赠送</span><span>+50</span></div>`;
+  const phone = localStorage.getItem('userPhone');
+  if (!phone) {
+    el.innerHTML = '<div class="me-row" style="color:var(--text2)">结账时填写手机号即可累积积分</div>';
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/customer/points?phone=${encodeURIComponent(phone)}`);
+    const json = await res.json();
+    if (json.success && json.data) {
+      MOCK.user.points = json.data.points;
+      MOCK.user.phone = phone;
+      // 更新积分显示
+      const pEl = document.querySelector('.me-points');
+      if (pEl) pEl.textContent = `积分：${json.data.points}`;
+      if (json.data.logs.length === 0) {
+        el.innerHTML = '<div class="me-row" style="color:var(--text2)">暂无积分记录</div>';
+      } else {
+        el.innerHTML = json.data.logs.map(l =>
+          `<div class="me-row"><span>${l.reason}</span><span style="color:${l.delta > 0 ? 'var(--green)' : 'var(--red)'}">${l.delta > 0 ? '+' : ''}${l.delta}</span></div>`
+        ).join('') + `<div class="me-row" style="color:var(--text2);font-size:12px">手机号：${phone}</div>`;
+      }
+    }
+  } catch (e) {
+    el.innerHTML = '<div class="me-row" style="color:var(--text2)">加载失败</div>';
+  }
 }
 
 // ========== API ==========

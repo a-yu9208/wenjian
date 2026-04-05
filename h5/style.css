@@ -68,6 +68,7 @@ button{border:none;cursor:pointer;font:inherit}
 .points-toggle input{width:18px;height:18px;accent-color:var(--brand)}
 .bill-notice{text-align:center;padding:20px;color:var(--text2);font-size:15px}
 .bill-submit{width:100%;padding:14px;background:var(--brand);color:#fff;border-radius:var(--r);font-size:16px;font-weight:700;margin-top:12px}
+.phone-input-wrap{padding:8px 0}.phone-input{width:100%;padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;font-size:15px;outline:none;text-align:center}.phone-input:focus{border-color:var(--brand)}
 
 .me-page{padding:16px}.me-header{text-align:center;padding:24px 0}
 .me-avatar{width:64px;height:64px;border-radius:50%;background:var(--cream);display:inline-flex;align-items:center;justify-content:center;font-size:28px}
