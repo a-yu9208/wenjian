@@ -38,4 +38,5 @@ class MockMerchantRepository : MerchantRepository {
     override suspend fun deleteTable(label: String) = Unit
     override suspend fun updateDish(dish: DishItem) = Unit
     override suspend fun batchUpdateCategory(names: Set<String>, category: String) = Unit
+    override suspend fun pushDishServed(orderId: String, dishName: String) = Unit
 }

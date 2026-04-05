@@ -61,4 +61,8 @@ class CloudBackedMerchantRepository(
     override suspend fun batchUpdateCategory(names: Set<String>, category: String) {
         bridge.batchUpdateCategory(names, category)
     }
+
+    override suspend fun pushDishServed(orderId: String, dishName: String) {
+        bridge.pushDishServed(orderId, dishName)
+    }
 }

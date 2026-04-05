@@ -272,6 +272,13 @@ function startOrderPoll() {
         const json = await res.json();
         if (json.success && json.data && MOCK.orders[i]) {
           MOCK.orders[i].status = json.data.status;
+          // 更新每道菜的上菜状态
+          if (json.data.items) {
+            json.data.items.forEach(si => {
+              const d = MOCK.orders[i].dishes.find(x => x.name === si.name);
+              if (d) d.served = !!si.served;
+            });
+          }
         }
       } catch (e) {}
     }

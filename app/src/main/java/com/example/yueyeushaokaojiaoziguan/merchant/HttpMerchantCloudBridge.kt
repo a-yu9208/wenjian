@@ -150,4 +150,8 @@ class HttpMerchantCloudBridge(
         val namesJson = names.joinToString(",") { "\"$it\"" }
         httpClient.post("/merchant/dishes/batch-category", """{"names":[$namesJson],"category":"$category"}""")
     }
+
+    override suspend fun pushDishServed(orderId: String, dishName: String) {
+        httpClient.post(MerchantApiConfig.orderActionsPath, """{"action":"toggleServed","orderId":$orderId,"dishName":"$dishName"}""")
+    }
 }

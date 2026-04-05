@@ -330,12 +330,16 @@ class MerchantViewModel(
                     order.copy(dishes = updatedDishes, status = newStatus)
                 } else order
             }
-            // 同步状态变更到后端
             val changed = updatedOrders.firstOrNull { it.tableLabel == tableLabel && it.time == time }
             val original = state.orders.firstOrNull { it.tableLabel == tableLabel && it.time == time }
-            if (changed != null && original != null && changed.status != original.status && changed.id > 0) {
+            if (changed != null && changed.id > 0) {
                 viewModelScope.launch(Dispatchers.IO) {
-                    runCatching { repository.pushOrderStatus(changed.id.toString(), changed.status) }
+                    // 同步上菜状态
+                    runCatching { repository.pushDishServed(changed.id.toString(), dishName) }
+                    // 同步订单状态变更
+                    if (original != null && changed.status != original.status) {
+                        runCatching { repository.pushOrderStatus(changed.id.toString(), changed.status) }
+                    }
                 }
             }
             state.copy(orders = updatedOrders)
