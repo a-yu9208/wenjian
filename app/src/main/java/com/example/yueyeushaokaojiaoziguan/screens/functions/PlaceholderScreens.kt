@@ -220,11 +220,20 @@ fun ProfileScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
             val ctx = androidx.compose.ui.platform.LocalContext.current
             val versionName = remember { try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName } catch (_: Exception) { "未知" } }
             val versionCode = remember { try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionCode } catch (_: Exception) { 0 } }
+            var checkResult by remember { mutableStateOf<String?>(null) }
+            var checking by remember { mutableStateOf(false) }
             Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("月月烧烤商家版", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("版本 v$versionName ($versionCode)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(4.dp))
-                Text("© 2026 白玉工作室", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                Spacer(Modifier.height(8.dp))
+                FilledTonalButton(onClick = {
+                    checking = true; checkResult = null
+                    com.example.yueyeushaokaojiaoziguan.merchant.AppUpdater.checkUpdate { info ->
+                        checking = false
+                        checkResult = if (info != null && info.versionCode > versionCode) "发现新版本 v${info.versionName}，请前往首页更新" else "当前已是最新版本"
+                    }
+                }, enabled = !checking) { Text(if (checking) "检测中..." else "检测最新版本") }
+                checkResult?.let { Spacer(Modifier.height(4.dp)); Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary) }
             }
         }
     }
