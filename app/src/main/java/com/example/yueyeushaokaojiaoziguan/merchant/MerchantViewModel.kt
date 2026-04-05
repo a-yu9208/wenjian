@@ -468,7 +468,11 @@ class MerchantViewModel(
                     profile = currentState.profile
                 )
             }.onSuccess { nextState ->
-                _uiState.value = nextState
+                val allEmpty = nextState.dashboardStats.isEmpty() && nextState.dishes.isEmpty()
+                        && nextState.orders.isEmpty() && nextState.tables.isEmpty()
+                _uiState.value = if (allEmpty) {
+                    nextState.copy(errorMessage = "无法连接服务器，请检查网络后点击刷新")
+                } else nextState
             }.onFailure { error ->
                 _uiState.value = currentState.copy(
                     loading = false,
