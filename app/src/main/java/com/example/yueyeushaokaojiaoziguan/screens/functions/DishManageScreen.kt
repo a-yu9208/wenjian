@@ -42,6 +42,16 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
     var typeFilter by remember { mutableStateOf("全部") }
 
     val allDishes = uiState.dishes.filter { keyword.isBlank() || it.name.contains(keyword, true) || it.category.contains(keyword, true) }
+
+    // 套餐库存 = min(子菜品库存 / 套餐中该子菜品数量)
+    fun comboStock(dish: DishItem): Int {
+        if (dish.type != "套餐" || dish.comboItems.isEmpty()) return dish.stock
+        return dish.comboItems.minOf { combo ->
+            val sub = uiState.dishes.find { it.name == combo.name }
+            if (sub != null && combo.quantity > 0) sub.stock / combo.quantity else 0
+        }
+    }
+
     val urgentDishes = allDishes.filter { it.type != "套餐" && it.stock < 20 }
     val normalDishes = allDishes.filter { it.type == "套餐" || it.stock >= 20 }.let { list ->
         when (typeFilter) {
@@ -88,7 +98,7 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                         }
                     }
                     itemsIndexed(urgentDishes, key = { _, it -> "u_${it.name}" }) { _, dish ->
-                        DishCard(dish, manageMode, dish.name in selected, { selected = if (it) selected + dish.name else selected - dish.name }, { editingDish = dish }, vm)
+                        DishCard(dish, manageMode, dish.name in selected, { selected = if (it) selected + dish.name else selected - dish.name }, { editingDish = dish }, vm, comboStock(dish))
                     }
                     item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
                 }
@@ -103,7 +113,7 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                         }
                     }
                     itemsIndexed(normalDishes, key = { _, it -> "n_${it.name}" }) { _, dish ->
-                        DishCard(dish, manageMode, dish.name in selected, { selected = if (it) selected + dish.name else selected - dish.name }, { editingDish = dish }, vm)
+                        DishCard(dish, manageMode, dish.name in selected, { selected = if (it) selected + dish.name else selected - dish.name }, { editingDish = dish }, vm, comboStock(dish))
                     }
                 }
             }
@@ -123,7 +133,8 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
 }
 
 @Composable
-private fun DishCard(dish: DishItem, manageMode: Boolean, checked: Boolean, onCheck: (Boolean) -> Unit, onClick: () -> Unit, vm: MerchantViewModel) {
+private fun DishCard(dish: DishItem, manageMode: Boolean, checked: Boolean, onCheck: (Boolean) -> Unit, onClick: () -> Unit, vm: MerchantViewModel, displayStock: Int = dish.stock) {
+    val isCombo = dish.type == "套餐"
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
@@ -140,7 +151,7 @@ private fun DishCard(dish: DishItem, manageMode: Boolean, checked: Boolean, onCh
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(dish.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                Text("${dish.category} · 库存${dish.stock}", fontSize = 13.sp, color = if (dish.stock < 20) Color(0xFFD32F2F) else MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("${dish.category} · 库存$displayStock${if (isCombo) "(自动)" else ""}", fontSize = 13.sp, color = if (displayStock < 20 && !isCombo) Color(0xFFD32F2F) else MaterialTheme.colorScheme.onSurfaceVariant)
                 if (dish.discountEnabled && dish.discountPrice.isNotBlank()) {
                     Row {
                         Text(dish.price, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
@@ -149,10 +160,11 @@ private fun DishCard(dish: DishItem, manageMode: Boolean, checked: Boolean, onCh
                     }
                 } else { Text(dish.price, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
             }
-            if (!manageMode) {
+            // 套餐不显示库存调整按钮
+            if (!manageMode && !isCombo) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { vm.updateDishStock(dish.name, -1) }, Modifier.size(32.dp)) { Text("−", fontSize = 18.sp) }
-                    Text("${dish.stock}", Modifier.width(30.dp), fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Text("$displayStock", Modifier.width(30.dp), fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     IconButton(onClick = { vm.updateDishStock(dish.name, 1) }, Modifier.size(32.dp)) { Text("+", fontSize = 18.sp) }
                 }
             }
