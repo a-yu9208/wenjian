@@ -162,6 +162,13 @@ class MerchantViewModel(
         )
     }
 
+    fun deleteDishes(names: Set<String>) {
+        _uiState.value = _uiState.value.copy(
+            dishes = _uiState.value.dishes.filterNot { it.name in names },
+            noticeMessage = "已删除 ${names.size} 道菜品"
+        )
+    }
+
     fun addDishFromDraft() {
         val draft = _uiState.value.dishDraft
         val priceValue = draft.price.trim()
@@ -201,10 +208,22 @@ class MerchantViewModel(
         }
     }
 
-    fun advanceOrderStatus(tableLabel: String) {
+    fun toggleDishServed(tableLabel: String, dishName: String) {
+        _uiState.value = _uiState.value.let { state ->
+            state.copy(orders = state.orders.map { order ->
+                if (order.tableLabel == tableLabel) {
+                    order.copy(dishes = order.dishes.map { dish ->
+                        if (dish.name == dishName) dish.copy(served = !dish.served) else dish
+                    })
+                } else order
+            })
+        }
+    }
+
+    fun advanceOrderStatus(tableLabel: String, time: String) {
         val nextState = _uiState.value.let { state ->
             val updated = state.orders.map { order ->
-                if (order.tableLabel == tableLabel) {
+                if (order.tableLabel == tableLabel && order.time == time) {
                     order.copy(status = nextOrderStatus(order.status))
                 } else {
                     order
@@ -216,7 +235,7 @@ class MerchantViewModel(
             )
         }
         _uiState.value = nextState
-        val targetOrder = nextState.orders.firstOrNull { it.tableLabel == tableLabel } ?: return
+        val targetOrder = nextState.orders.firstOrNull { it.tableLabel == tableLabel && it.time == time } ?: return
         viewModelScope.launch {
             runCatching { repository.pushOrderStatus(tableLabel, targetOrder.status) }
                 .onFailure {

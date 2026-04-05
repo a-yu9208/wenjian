@@ -44,7 +44,7 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
 
             // 菜品列表
             LazyColumn(
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(uiState.dishes, key = { it.name }) { dish ->
@@ -119,7 +119,7 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
         if (manageMode && selected.isNotEmpty()) {
             Button(
                 onClick = {
-                    // TODO: implement batch delete
+                    vm.deleteDishes(selected)
                     selected = emptySet()
                     manageMode = false
                 },
@@ -176,10 +176,9 @@ private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDis
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                // 分类选择
                 Text("分类：${uiState.dishDraft.category}", fontSize = 13.sp)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    uiState.categories.take(5).forEach { cat ->
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    uiState.categories.forEach { cat ->
                         AssistChip(
                             onClick = { vm.updateDishDraft(category = cat) },
                             label = { Text(cat, fontSize = 12.sp) }

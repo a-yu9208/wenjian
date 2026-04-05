@@ -25,7 +25,7 @@ import com.example.yueyeushaokaojiaoziguan.merchant.OrderItem
 @Composable
 fun HomeWorkbenchScreen(
     uiState: MerchantUiState,
-    onAdvanceOrder: (String) -> Unit,
+    onAdvanceOrder: (String, String) -> Unit,
     onToggleDishServed: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -90,7 +90,7 @@ fun HomeWorkbenchScreen(
             }
         } else {
             LazyColumn(
-                contentPadding = PaddingValues(12.dp),
+                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(filteredOrders, key = { it.tableLabel + it.time }) { order ->
@@ -102,7 +102,7 @@ fun HomeWorkbenchScreen(
                             expandedOrder = if (expandedOrder == (order.tableLabel + order.time)) null
                             else (order.tableLabel + order.time)
                         },
-                        onStatusClick = { onAdvanceOrder(order.tableLabel) },
+                        onStatusClick = { onAdvanceOrder(order.tableLabel, order.time) },
                         onToggleServed = { dishName -> onToggleDishServed(order.tableLabel, dishName) }
                     )
                 }

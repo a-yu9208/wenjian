@@ -26,14 +26,15 @@ fun FunctionsScreen(
     vm: MerchantViewModel,
     modifier: Modifier = Modifier
 ) {
-    var activePage by rememberSaveable { mutableStateOf<FunctionEntry?>(null) }
+    var activePageName by rememberSaveable { mutableStateOf<String?>(null) }
+    val activePage = activePageName?.let { name -> FunctionEntry.entries.find { it.name == name } }
 
     if (activePage != null) {
         FunctionSubPage(
-            entry = activePage!!,
+            entry = activePage,
             uiState = uiState,
             vm = vm,
-            onBack = { activePage = null }
+            onBack = { activePageName = null }
         )
     } else {
         LazyVerticalGrid(
@@ -47,7 +48,7 @@ fun FunctionsScreen(
                 Card(
                     modifier = Modifier
                         .aspectRatio(1f)
-                        .clickable { activePage = entry },
+                        .clickable { activePageName = entry.name },
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     shape = RoundedCornerShape(16.dp)
@@ -85,7 +86,7 @@ private fun FunctionSubPage(
             )
         }
     ) { padding ->
-        Box(Modifier.padding(padding)) {
+        Box(Modifier.padding(padding).fillMaxSize()) {
             when (entry) {
                 FunctionEntry.Revenue -> RevenueScreen(uiState)
                 FunctionEntry.DishManage -> DishManageScreen(uiState, vm)

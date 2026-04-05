@@ -89,9 +89,7 @@ private fun ShaokaoMerchantApp() {
             MerchantTab.Home -> HomeWorkbenchScreen(
                 uiState = uiState,
                 onAdvanceOrder = vm::advanceOrderStatus,
-                onToggleDishServed = { orderTable, dishName ->
-                    // TODO: implement toggle served
-                },
+                onToggleDishServed = vm::toggleDishServed,
                 modifier = Modifier.padding(innerPadding)
             )
             MerchantTab.Orders -> OrderHistoryScreen(
