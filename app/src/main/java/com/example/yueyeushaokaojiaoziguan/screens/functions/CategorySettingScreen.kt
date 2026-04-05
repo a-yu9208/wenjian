@@ -54,13 +54,13 @@ fun CategorySettingScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                         )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        IconButton(onClick = { vm.moveCategoryUp(category) }) { Text("↑") }
+                        IconButton(onClick = { vm.moveCategoryDown(category) }) { Text("↓") }
                         TextButton(onClick = { batchTarget = category }) {
                             Text("添加菜品")
                         }
-                        if (category != "未分类") {
-                            TextButton(onClick = { vm.removeCategory(category) }) {
-                                Text("删除", color = Color(0xFFD32F2F))
-                            }
+                        TextButton(onClick = { vm.removeCategory(category) }) {
+                            Text("删除", color = Color(0xFFD32F2F))
                         }
                     }
                 }

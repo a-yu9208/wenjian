@@ -207,22 +207,21 @@ class MerchantViewModel(
 
     fun removeCategory(category: String) {
         val normalized = category.trim()
-        if (normalized.isBlank() || normalized == "未分类") {
-            _uiState.value = _uiState.value.copy(errorMessage = "未分类不能删除")
+        if (normalized.isBlank()) return
+        val currentCats = _uiState.value.categories
+        if (currentCats.size <= 1) {
+            _uiState.value = _uiState.value.copy(errorMessage = "至少保留一个分类")
             return
         }
 
-        val nextCategories = _uiState.value.categories
-            .filterNot { it == normalized }
-            .let { categories ->
-                if ("未分类" in categories) categories else categories + "未分类"
-            }
+        val nextCategories = currentCats.filterNot { it == normalized }
+        val fallback = nextCategories.first()
 
         val nextDishes = _uiState.value.dishes.map { dish ->
-            if (dish.category == normalized) dish.copy(category = "未分类") else dish
+            if (dish.category == normalized) dish.copy(category = fallback) else dish
         }
         val nextDraft = if (_uiState.value.dishDraft.category == normalized) {
-            _uiState.value.dishDraft.copy(category = "未分类")
+            _uiState.value.dishDraft.copy(category = fallback)
         } else {
             _uiState.value.dishDraft
         }
@@ -231,9 +230,36 @@ class MerchantViewModel(
             categories = nextCategories,
             dishes = nextDishes,
             dishDraft = nextDraft,
-            noticeMessage = "已删除分类：$normalized，原分类菜品已归到未分类",
+            noticeMessage = "已删除分类：$normalized，原分类菜品已归到 $fallback",
             errorMessage = null
         )
+    }
+
+    fun moveCategoryUp(category: String) {
+        val cats = _uiState.value.categories.toMutableList()
+        val idx = cats.indexOf(category)
+        if (idx > 0) {
+            cats[idx] = cats[idx - 1].also { cats[idx - 1] = cats[idx] }
+            _uiState.value = _uiState.value.copy(categories = cats)
+            syncCategoryOrder(cats)
+        }
+    }
+
+    fun moveCategoryDown(category: String) {
+        val cats = _uiState.value.categories.toMutableList()
+        val idx = cats.indexOf(category)
+        if (idx >= 0 && idx < cats.size - 1) {
+            cats[idx] = cats[idx + 1].also { cats[idx + 1] = cats[idx] }
+            _uiState.value = _uiState.value.copy(categories = cats)
+            syncCategoryOrder(cats)
+        }
+    }
+
+    private fun syncCategoryOrder(cats: List<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val json = cats.joinToString(",", prefix = "[", postfix = "]") { "\"$it\"" }
+            MerchantHttpClient().post("/merchant/categories/order", """{"categories":$json}""")
+        }
     }
 
     fun deleteDishes(names: Set<String>) {
