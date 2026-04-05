@@ -92,7 +92,7 @@ private fun ShaokaoMerchantApp() {
                         onClick = { currentTabName = tab.name },
                         icon = {
                             Box(contentAlignment = Alignment.Center) {
-                                AnimatedVisibility(selected, enter = fadeIn(tween(300)) + scaleIn(initialScale = 0.8f), exit = fadeOut(tween(200))) {
+                                if (selected) {
                                     Box(Modifier.width(56.dp).height(32.dp).clip(RoundedCornerShape(16.dp))
                                         .background(Brush.horizontalGradient(GradientOrange), alpha = 0.15f))
                                 }

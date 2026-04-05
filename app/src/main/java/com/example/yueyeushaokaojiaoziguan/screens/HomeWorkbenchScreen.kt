@@ -62,13 +62,9 @@ fun HomeWorkbenchScreen(
                 divider = {},
                 indicator = { tabPositions ->
                     if (pagerState.currentPage < tabPositions.size) {
-                        Box(
-                            Modifier
-                                .tabIndicatorOffset(tabPositions[pagerState.currentPage])
-                                .height(3.dp)
-                                .padding(horizontal = 16.dp)
-                                .clip(RoundedCornerShape(1.5.dp))
-                                .background(Brush.horizontalGradient(GradientFire))
+                        TabRowDefaults.SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
