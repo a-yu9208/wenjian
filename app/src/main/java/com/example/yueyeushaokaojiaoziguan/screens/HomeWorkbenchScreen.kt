@@ -6,10 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +23,7 @@ import com.example.yueyeushaokaojiaoziguan.merchant.HomeSubTab
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantUiState
 import com.example.yueyeushaokaojiaoziguan.merchant.OrderDishItem
 import com.example.yueyeushaokaojiaoziguan.merchant.OrderItem
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeWorkbenchScreen(
@@ -31,39 +33,11 @@ fun HomeWorkbenchScreen(
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var subTabName by rememberSaveable { mutableStateOf(HomeSubTab.Pending.name) }
-    val subTab = HomeSubTab.entries.find { it.name == subTabName } ?: HomeSubTab.Pending
+    val subTabs = HomeSubTab.entries
+    val pagerState = rememberPagerState(pageCount = { subTabs.size })
+    val scope = rememberCoroutineScope()
+    val subTab = subTabs[pagerState.currentPage]
     var expandedOrder by remember { mutableStateOf<String?>(null) }
-
-    val filteredOrders = remember(subTab, uiState.orders) {
-        when (subTab) {
-            HomeSubTab.Pending -> uiState.orders.filter { it.status == "待处理" }
-            HomeSubTab.QuickServe -> uiState.orders.filter {
-                it.status in listOf("待处理", "制作中") && it.dishes.any { d -> d.quickServe && !d.served }
-            }
-            HomeSubTab.Cooking -> uiState.orders.filter { it.status == "制作中" }
-            HomeSubTab.AwaitingPayment -> {
-                // 按桌号合并同桌订单
-                val raw = uiState.orders.filter { it.status == "待结账" }
-                raw.groupBy { it.tableLabel }.map { (_, group) ->
-                    if (group.size == 1) group.first()
-                    else {
-                        val allDishes = group.flatMap { it.dishes }
-                        val totalAmount = group.sumOf {
-                            it.amount.replace("¥", "").replace(",", "").toDoubleOrNull() ?: 0.0
-                        }
-                        val first = group.first()
-                        first.copy(
-                            summary = group.joinToString("、") { it.summary },
-                            amount = "¥%.2f".format(totalAmount),
-                            dishes = allDishes,
-                            isAppend = false
-                        )
-                    }
-                }
-            }
-        }
-    }
 
     val counts = remember(uiState.orders) {
         mapOf(
@@ -81,15 +55,15 @@ fun HomeWorkbenchScreen(
         // 顶部子 Tab + 刷新
         Row(verticalAlignment = Alignment.CenterVertically) {
             ScrollableTabRow(
-                selectedTabIndex = HomeSubTab.entries.indexOf(subTab),
+                selectedTabIndex = pagerState.currentPage,
                 edgePadding = 8.dp,
                 divider = {},
                 modifier = Modifier.weight(1f)
             ) {
-                HomeSubTab.entries.forEach { tab ->
+                subTabs.forEachIndexed { index, tab ->
                     Tab(
-                        selected = subTab == tab,
-                        onClick = { subTabName = tab.name },
+                        selected = pagerState.currentPage == index,
+                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(tab.label)
@@ -108,32 +82,66 @@ fun HomeWorkbenchScreen(
             }
         }
 
-        // 订单列表
-        if (uiState.loading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        // 订单列表（左右滑动切换）
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            val pageTab = subTabs[page]
+            val pageOrders = remember(pageTab, uiState.orders) {
+                when (pageTab) {
+                    HomeSubTab.Pending -> uiState.orders.filter { it.status == "待处理" }
+                    HomeSubTab.QuickServe -> uiState.orders.filter {
+                        it.status in listOf("待处理", "制作中") && it.dishes.any { d -> d.quickServe && !d.served }
+                    }
+                    HomeSubTab.Cooking -> uiState.orders.filter { it.status == "制作中" }
+                    HomeSubTab.AwaitingPayment -> {
+                        val raw = uiState.orders.filter { it.status == "待结账" }
+                        raw.groupBy { it.tableLabel }.map { (_, group) ->
+                            if (group.size == 1) group.first()
+                            else {
+                                val allDishes = group.flatMap { it.dishes }
+                                val totalAmount = group.sumOf {
+                                    it.amount.replace("¥", "").replace(",", "").toDoubleOrNull() ?: 0.0
+                                }
+                                group.first().copy(
+                                    summary = group.joinToString("、") { it.summary },
+                                    amount = "¥%.2f".format(totalAmount),
+                                    dishes = allDishes,
+                                    isAppend = false
+                                )
+                            }
+                        }
+                    }
+                }
             }
-        } else if (filteredOrders.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("暂无订单", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        } else {
-            LazyColumn(
-                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(filteredOrders, key = { it.tableLabel + it.time }) { order ->
-                    OrderWorkCard(
-                        order = order,
-                        subTab = subTab,
-                        expanded = expandedOrder == (order.tableLabel + order.time),
-                        onCardClick = {
-                            expandedOrder = if (expandedOrder == (order.tableLabel + order.time)) null
-                            else (order.tableLabel + order.time)
-                        },
-                        onStatusClick = { onAdvanceOrder(order.tableLabel, order.time) },
-                        onToggleServed = { dishName -> onToggleDishServed(order.tableLabel, order.time, dishName) }
-                    )
+
+            if (uiState.loading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (pageOrders.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("暂无订单", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(pageOrders, key = { it.tableLabel + it.time }) { order ->
+                        OrderWorkCard(
+                            order = order,
+                            subTab = pageTab,
+                            expanded = expandedOrder == (order.tableLabel + order.time),
+                            onCardClick = {
+                                expandedOrder = if (expandedOrder == (order.tableLabel + order.time)) null
+                                else (order.tableLabel + order.time)
+                            },
+                            onStatusClick = { onAdvanceOrder(order.tableLabel, order.time) },
+                            onToggleServed = { dishName -> onToggleDishServed(order.tableLabel, order.time, dishName) }
+                        )
+                    }
                 }
             }
         }
