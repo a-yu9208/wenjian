@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,11 +18,11 @@ class MerchantViewModel(
 
     private val _uiState = MutableStateFlow(MerchantUiState())
     val uiState: StateFlow<MerchantUiState> = _uiState.asStateFlow()
-    private var pollJob: Job? = null
+    private var sseJob: Job? = null
 
     init {
         loadMerchantData()
-        startAutoRefresh()
+        startSseListener()
     }
 
     fun loadMerchantData() {
@@ -34,19 +33,37 @@ class MerchantViewModel(
         fetchMerchantData(initialLoad = false)
     }
 
-    private fun startAutoRefresh() {
-        pollJob?.cancel()
-        pollJob = viewModelScope.launch {
+    private fun startSseListener() {
+        sseJob?.cancel()
+        sseJob = viewModelScope.launch(Dispatchers.IO) {
             while (isActive) {
-                delay(5000L)
-                fetchMerchantData(initialLoad = false)
+                try {
+                    val url = java.net.URL("${MerchantApiConfig.baseApiUrl}/merchant/events")
+                    val conn = url.openConnection() as java.net.HttpURLConnection
+                    conn.connectTimeout = 10000
+                    conn.readTimeout = 0  // 无超时，保持长连接
+                    conn.setRequestProperty("Accept", "text/event-stream")
+                    conn.inputStream.bufferedReader().use { reader ->
+                        while (isActive) {
+                            val line = reader.readLine() ?: break
+                            if (line.startsWith("data:")) {
+                                withContext(Dispatchers.Main) {
+                                    fetchMerchantData(initialLoad = false)
+                                }
+                            }
+                        }
+                    }
+                } catch (_: Exception) {
+                    // 连接断开，等 3 秒重连
+                }
+                kotlinx.coroutines.delay(3000L)
             }
         }
     }
 
     override fun onCleared() {
         super.onCleared()
-        pollJob?.cancel()
+        sseJob?.cancel()
     }
 
     fun updateQrDraft(
