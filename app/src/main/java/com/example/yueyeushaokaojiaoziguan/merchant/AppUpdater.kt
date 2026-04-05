@@ -71,7 +71,6 @@ object AppUpdater {
                     cursor.close()
                     if (status == DownloadManager.STATUS_SUCCESSFUL) {
                         mainHandler.post { onProgress(100) }
-                        mainHandler.post { installApk(context, file) }
                         break
                     }
                     if (status == DownloadManager.STATUS_FAILED) break
@@ -79,6 +78,11 @@ object AppUpdater {
                 Thread.sleep(500)
             }
         }.start()
+    }
+
+    fun installDownloaded(context: Context) {
+        val file = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "update.apk")
+        if (file.exists()) installApk(context, file)
     }
 
     private fun installApk(context: Context, file: File) {

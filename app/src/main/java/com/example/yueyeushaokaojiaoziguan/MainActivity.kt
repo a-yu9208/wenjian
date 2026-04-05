@@ -170,6 +170,7 @@ private fun ShaokaoMerchantApp() {
 
     // 更新弹窗
     updateInfo?.let { info ->
+        val downloadDone = downloading && downloadProgress >= 100
         AlertDialog(
             onDismissRequest = { if (!downloading) updateInfo = null },
             title = { Text("发现新版本 v${info.versionName}", fontWeight = FontWeight.Bold) },
@@ -179,13 +180,17 @@ private fun ShaokaoMerchantApp() {
                     if (downloading) {
                         Spacer(Modifier.height(12.dp))
                         LinearProgressIndicator(progress = { downloadProgress / 100f }, modifier = Modifier.fillMaxWidth())
-                        Text("下载中 $downloadProgress%", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if (downloadDone) "下载完成" else "下载中 $downloadProgress%", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { downloading = true; AppUpdater.downloadAndInstall(context, info) { downloadProgress = it } }, enabled = !downloading) {
-                    Text(if (downloading) "下载中..." else "立即更新")
+                if (downloadDone) {
+                    TextButton(onClick = { AppUpdater.installDownloaded(context) }) { Text("安装") }
+                } else {
+                    TextButton(onClick = { downloading = true; AppUpdater.downloadAndInstall(context, info) { downloadProgress = it } }, enabled = !downloading) {
+                        Text(if (downloading) "下载中..." else "立即更新")
+                    }
                 }
             },
             dismissButton = { if (!downloading) TextButton(onClick = { updateInfo = null }) { Text("稍后再说") } }
