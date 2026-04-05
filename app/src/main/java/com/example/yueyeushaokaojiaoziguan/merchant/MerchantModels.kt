@@ -81,7 +81,7 @@ data class TableQrDraft(
     val section: String = "outside",
     val tableNumber: String = "8",
     val target: String = "h5",
-    val baseUrl: String = "https://order.example.com"
+    val baseUrl: String = "https://api.teselx.cn"
 )
 
 data class DishDraft(
@@ -112,6 +112,6 @@ data class PointsLog(
 data class MerchantProfile(
     val shopName: String = "夜月烧烤",
     val account: String = "店主账号",
-    val h5BaseUrl: String = "https://order.example.com",
+    val h5BaseUrl: String = "https://api.teselx.cn",
     val mode: String = "单店模式"
 )

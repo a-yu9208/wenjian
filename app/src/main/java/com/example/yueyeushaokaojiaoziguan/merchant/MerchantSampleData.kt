@@ -73,9 +73,9 @@ object MerchantSampleData {
     )
 
     val tables = listOf(
-        TableItem("8 号桌", "室外", "使用中", "微信 H5", "https://order.example.com?tableId=outside-8"),
-        TableItem("12 号桌", "室外", "空闲", "微信 H5", "https://order.example.com?tableId=outside-12"),
+        TableItem("8 号桌", "室外", "使用中", "微信 H5", "https://api.teselx.cn?section=outside&number=8"),
+        TableItem("12 号桌", "室外", "空闲", "微信 H5", "https://api.teselx.cn?section=outside&number=12"),
         TableItem("3 号桌", "一楼", "使用中", "小程序", ""),
-        TableItem("2 号桌", "二楼", "待结账", "微信 H5", "https://order.example.com?tableId=second-2")
+        TableItem("2 号桌", "二楼", "待结账", "微信 H5", "https://api.teselx.cn?section=second&number=2")
     )
 }

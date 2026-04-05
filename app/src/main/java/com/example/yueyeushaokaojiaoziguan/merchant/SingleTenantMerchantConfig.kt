@@ -4,7 +4,7 @@ object SingleTenantMerchantConfig {
     const val merchantName = "夜月烧烤"
     const val merchantModeLabel = "单店模式"
     const val merchantAccount = "店主账号"
-    const val customerH5BaseUrl = "https://order.example.com"
+    const val customerH5BaseUrl = "https://api.teselx.cn"
 
     fun buildCustomerOrderUrl(
         section: String,
