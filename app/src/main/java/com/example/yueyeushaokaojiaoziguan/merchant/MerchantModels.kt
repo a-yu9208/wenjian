@@ -96,3 +96,22 @@ data class DishDraft(
     val discountEnabled: Boolean = false,
     val discountPrice: String = ""
 )
+
+data class PointsConfig(
+    val earnRate: Int = 1,       // 消费1元得N积分
+    val deductRate: Int = 10     // N积分抵1元
+)
+
+data class PointsLog(
+    val target: String,          // 桌号或手机号
+    val delta: Int,              // +增 -减
+    val reason: String,
+    val time: String
+)
+
+data class MerchantProfile(
+    val shopName: String = "夜月烧烤",
+    val account: String = "店主账号",
+    val h5BaseUrl: String = "https://order.example.com",
+    val mode: String = "单店模式"
+)

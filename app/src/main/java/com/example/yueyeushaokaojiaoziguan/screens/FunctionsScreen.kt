@@ -92,8 +92,8 @@ private fun FunctionSubPage(
                 FunctionEntry.DishManage -> DishManageScreen(uiState, vm)
                 FunctionEntry.CategorySetting -> CategorySettingScreen(uiState, vm)
                 FunctionEntry.TableManage -> TableManageScreen(uiState, vm)
-                FunctionEntry.PointsActivity -> PointsActivityScreen()
-                FunctionEntry.Profile -> ProfileScreen()
+                FunctionEntry.PointsActivity -> PointsActivityScreen(uiState, vm)
+                FunctionEntry.Profile -> ProfileScreen(uiState, vm)
             }
         }
     }

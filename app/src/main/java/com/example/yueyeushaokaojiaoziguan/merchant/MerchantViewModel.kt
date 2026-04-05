@@ -335,6 +335,45 @@ class MerchantViewModel(
         }
     }
 
+    fun updatePointsConfig(earnRate: Int? = null, deductRate: Int? = null) {
+        val current = _uiState.value.pointsConfig
+        _uiState.value = _uiState.value.copy(
+            pointsConfig = current.copy(
+                earnRate = earnRate ?: current.earnRate,
+                deductRate = deductRate ?: current.deductRate
+            ),
+            noticeMessage = "积分规则已更新"
+        )
+    }
+
+    fun addPointsLog(target: String, delta: Int, reason: String) {
+        if (target.isBlank() || delta == 0) {
+            _uiState.value = _uiState.value.copy(errorMessage = "请填写对象和积分数量")
+            return
+        }
+        val log = PointsLog(
+            target = target.trim(),
+            delta = delta,
+            reason = reason.ifBlank { if (delta > 0) "商家赠送" else "商家扣减" },
+            time = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+        )
+        _uiState.value = _uiState.value.copy(
+            pointsLogs = listOf(log) + _uiState.value.pointsLogs,
+            noticeMessage = "已${if (delta > 0) "增加" else "扣减"} ${target.trim()} ${kotlin.math.abs(delta)} 积分"
+        )
+    }
+
+    fun updateProfile(shopName: String? = null, h5BaseUrl: String? = null) {
+        val current = _uiState.value.profile
+        _uiState.value = _uiState.value.copy(
+            profile = current.copy(
+                shopName = shopName ?: current.shopName,
+                h5BaseUrl = h5BaseUrl ?: current.h5BaseUrl
+            ),
+            noticeMessage = "个人信息已更新"
+        )
+    }
+
     private fun buildQrPreview(draft: TableQrDraft): String {
         if (draft.target != "h5") {
             return """{"t":"table","s":"${draft.section}","n":"${draft.tableNumber}"}"""
