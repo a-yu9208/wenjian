@@ -158,6 +158,12 @@ class MerchantViewModel(
         )
     }
 
+    fun updateDishDraftComboItems(items: List<ComboItem>) {
+        _uiState.value = _uiState.value.copy(
+            dishDraft = _uiState.value.dishDraft.copy(comboItems = items)
+        )
+    }
+
     fun updateCategoryDraft(value: String) {
         _uiState.value = _uiState.value.copy(categoryDraft = value)
     }
@@ -262,6 +268,10 @@ class MerchantViewModel(
         }
 
         val normalizedPrice = if (priceValue.startsWith("¥")) priceValue else "¥$priceValue"
+        val comboDesc = if (draft.type == "套餐" && draft.comboItems.isNotEmpty()) {
+            draft.comboItems.joinToString("、") { "${it.name}x${it.quantity}" }
+        } else draft.description
+
         val newDish = DishItem(
             name = draft.name.trim(),
             category = draft.category,
@@ -269,14 +279,15 @@ class MerchantViewModel(
             stock = stockValue,
             soldToday = 0,
             type = draft.type,
-            description = draft.description,
+            description = comboDesc,
             minOrder = draft.minOrder.toIntOrNull() ?: 1,
             quickServe = draft.quickServe,
             discountEnabled = draft.discountEnabled,
             discountPrice = if (draft.discountEnabled) {
                 val dp = draft.discountPrice.trim()
                 if (dp.startsWith("¥")) dp else "¥$dp"
-            } else ""
+            } else "",
+            comboItems = if (draft.type == "套餐") draft.comboItems else emptyList()
         )
 
         _uiState.value = _uiState.value.copy(

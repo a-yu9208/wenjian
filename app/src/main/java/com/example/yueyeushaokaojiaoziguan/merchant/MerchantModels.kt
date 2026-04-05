@@ -45,7 +45,8 @@ data class DishItem(
     val minOrder: Int = 1,
     val quickServe: Boolean = false,
     val discountEnabled: Boolean = false,
-    val discountPrice: String = ""
+    val discountPrice: String = "",
+    val comboItems: List<ComboItem> = emptyList()
 )
 
 data class OrderDishItem(
@@ -87,6 +88,11 @@ data class TableQrDraft(
     val baseUrl: String = "https://api.teselx.cn"
 )
 
+data class ComboItem(
+    val name: String,
+    val quantity: Int = 1
+)
+
 data class DishDraft(
     val name: String = "",
     val category: String = "烧烤",
@@ -97,7 +103,8 @@ data class DishDraft(
     val minOrder: String = "1",
     val quickServe: Boolean = false,
     val discountEnabled: Boolean = false,
-    val discountPrice: String = ""
+    val discountPrice: String = "",
+    val comboItems: List<ComboItem> = emptyList()
 )
 
 data class PointsConfig(

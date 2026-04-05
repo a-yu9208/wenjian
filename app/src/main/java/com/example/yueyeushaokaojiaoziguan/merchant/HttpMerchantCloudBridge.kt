@@ -117,7 +117,12 @@ class HttpMerchantCloudBridge(
 
     override suspend fun createDish(dish: DishItem) {
         val price = dish.price.replace("¥", "").toDoubleOrNull() ?: 0.0
-        val requestBody = """{"name":"${dish.name}","category":"${dish.category}","price":$price,"stock":${dish.stock},"type":"${dish.type}","description":"${dish.description}","minOrder":${dish.minOrder},"quickServe":${dish.quickServe}}"""
+        val comboJson = if (dish.comboItems.isNotEmpty()) {
+            dish.comboItems.joinToString(",", prefix = "[", postfix = "]") {
+                """{"name":"${it.name}","quantity":${it.quantity}}"""
+            }
+        } else "[]"
+        val requestBody = """{"name":"${dish.name}","category":"${dish.category}","price":$price,"stock":${dish.stock},"type":"${dish.type}","description":"${dish.description}","minOrder":${dish.minOrder},"quickServe":${dish.quickServe},"comboItems":$comboJson}"""
         httpClient.post("/merchant/dishes", requestBody)
     }
 

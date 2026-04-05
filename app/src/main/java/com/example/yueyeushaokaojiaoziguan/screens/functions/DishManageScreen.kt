@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantUiState
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantViewModel
 import com.example.yueyeushaokaojiaoziguan.merchant.DishItem
+import com.example.yueyeushaokaojiaoziguan.merchant.ComboItem
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -148,6 +149,8 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
 
 @Composable
 private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDismiss: () -> Unit) {
+    var comboItems by remember { mutableStateOf(uiState.dishDraft.comboItems) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("新增菜品") },
@@ -201,6 +204,27 @@ private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDis
                         )
                     }
                 }
+                // 类型选择
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("类型：", fontSize = 14.sp)
+                    FilterChip(selected = uiState.dishDraft.type == "单品", onClick = { vm.updateDishDraft(type = "单品") }, label = { Text("单品") })
+                    FilterChip(selected = uiState.dishDraft.type == "套餐", onClick = { vm.updateDishDraft(type = "套餐") }, label = { Text("套餐") })
+                }
+                // 套餐子菜品
+                if (uiState.dishDraft.type == "套餐") {
+                    Text("套餐包含：", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    comboItems.forEachIndexed { idx, item ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("${item.name} x${item.quantity}", fontSize = 13.sp, modifier = Modifier.weight(1f))
+                            IconButton(onClick = { comboItems = comboItems.toMutableList().also { it.removeAt(idx) } }, Modifier.size(28.dp)) {
+                                Text("✕", fontSize = 14.sp, color = Color(0xFFD32F2F))
+                            }
+                        }
+                    }
+                    ComboItemPicker(dishes = uiState.dishes, onAdd = { name, qty ->
+                        comboItems = comboItems + ComboItem(name, qty)
+                    })
+                }
                 // 开关
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("可快速上菜", fontSize = 14.sp, modifier = Modifier.weight(1f))
@@ -222,12 +246,60 @@ private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDis
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (vm.addDishFromDraft()) vm.hideAddDishDialog() }) { Text("保存") }
+            TextButton(onClick = {
+                vm.updateDishDraftComboItems(comboItems)
+                if (vm.addDishFromDraft()) vm.hideAddDishDialog()
+            }) { Text("保存") }
         },
         dismissButton = {
             TextButton(onClick = { vm.hideAddDishDialog() }) { Text("取消") }
         }
     )
+}
+
+@Composable
+private fun ComboItemPicker(dishes: List<DishItem>, onAdd: (String, Int) -> Unit) {
+    var selectedDish by remember { mutableStateOf("") }
+    var qty by remember { mutableStateOf("1") }
+    val dishNames = dishes.filter { it.type != "套餐" }.map { it.name }
+
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        var expanded by remember { mutableStateOf(false) }
+        Box(Modifier.weight(1f)) {
+            OutlinedTextField(
+                value = selectedDish,
+                onValueChange = { selectedDish = it },
+                label = { Text("选择菜品") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }.also {
+                    LaunchedEffect(it) { it.interactions.collect { expanded = true } }
+                }
+            )
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                dishNames.forEach { name ->
+                    DropdownMenuItem(text = { Text(name) }, onClick = { selectedDish = name; expanded = false })
+                }
+            }
+        }
+        OutlinedTextField(
+            value = qty,
+            onValueChange = { qty = it.filter(Char::isDigit) },
+            label = { Text("数量") },
+            singleLine = true,
+            modifier = Modifier.width(60.dp)
+        )
+        FilledTonalButton(
+            onClick = {
+                if (selectedDish.isNotBlank()) {
+                    onAdd(selectedDish, qty.toIntOrNull() ?: 1)
+                    selectedDish = ""; qty = "1"
+                }
+            },
+            modifier = Modifier.height(40.dp)
+        ) { Text("+") }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
