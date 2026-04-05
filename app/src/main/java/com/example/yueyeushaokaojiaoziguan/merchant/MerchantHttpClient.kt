@@ -20,8 +20,8 @@ class MerchantHttpClient(
     private fun request(path: String, method: String, body: String? = null): MerchantApiResult<String> {
         val connection = (URL("${baseUrl.trimEnd('/')}$path").openConnection() as HttpURLConnection).apply {
             requestMethod = method
-            connectTimeout = 3000
-            readTimeout = 3000
+            connectTimeout = 8000
+            readTimeout = 8000
             setRequestProperty("Content-Type", "application/json")
             doInput = true
             if (method == "POST") {
