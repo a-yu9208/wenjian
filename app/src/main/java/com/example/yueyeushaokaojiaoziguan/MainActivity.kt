@@ -6,8 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
@@ -24,8 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,7 +38,6 @@ import com.example.yueyeushaokaojiaoziguan.screens.FunctionsScreen
 import com.example.yueyeushaokaojiaoziguan.screens.HomeWorkbenchScreen
 import com.example.yueyeushaokaojiaoziguan.screens.OrderHistoryScreen
 import com.example.yueyeushaokaojiaoziguan.ui.theme.YueyeushaokaojiaoziguanTheme
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,9 +64,8 @@ private val tabIcons: Map<MerchantTab, ImageVector> = mapOf(
 
 @Composable
 private fun ShaokaoMerchantApp() {
-    val tabs = MerchantTab.entries
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
-    val scope = rememberCoroutineScope()
+    var currentTabName by rememberSaveable { mutableStateOf(MerchantTab.Home.name) }
+    val currentTab = MerchantTab.entries.find { it.name == currentTabName } ?: MerchantTab.Home
     val vm: MerchantViewModel = viewModel(
         factory = MerchantViewModelFactory(MerchantAppContainer.repository)
     )
@@ -87,10 +85,10 @@ private fun ShaokaoMerchantApp() {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             NavigationBar {
-                tabs.forEachIndexed { index, tab ->
+                MerchantTab.entries.forEach { tab ->
                     NavigationBarItem(
-                        selected = pagerState.currentPage == index,
-                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                        selected = currentTab == tab,
+                        onClick = { currentTabName = tab.name },
                         icon = {
                             Icon(
                                 imageVector = tabIcons[tab] ?: Icons.Default.Home,
@@ -103,26 +101,24 @@ private fun ShaokaoMerchantApp() {
             }
         }
     ) { innerPadding ->
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.padding(innerPadding)
-        ) { page ->
-            when (tabs[page]) {
-                MerchantTab.Home -> HomeWorkbenchScreen(
-                    uiState = uiState,
-                    onAdvanceOrder = vm::advanceOrderStatus,
-                    onToggleDishServed = vm::toggleDishServed,
-                    onRefresh = vm::refreshMerchantData
-                )
-                MerchantTab.Orders -> OrderHistoryScreen(
-                    uiState = uiState,
-                    vm = vm
-                )
-                MerchantTab.Functions -> FunctionsScreen(
-                    uiState = uiState,
-                    vm = vm
-                )
-            }
+        when (currentTab) {
+            MerchantTab.Home -> HomeWorkbenchScreen(
+                uiState = uiState,
+                onAdvanceOrder = vm::advanceOrderStatus,
+                onToggleDishServed = vm::toggleDishServed,
+                onRefresh = vm::refreshMerchantData,
+                modifier = Modifier.padding(innerPadding)
+            )
+            MerchantTab.Orders -> OrderHistoryScreen(
+                uiState = uiState,
+                vm = vm,
+                modifier = Modifier.padding(innerPadding)
+            )
+            MerchantTab.Functions -> FunctionsScreen(
+                uiState = uiState,
+                vm = vm,
+                modifier = Modifier.padding(innerPadding)
+            )
         }
     }
 }
