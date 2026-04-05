@@ -94,6 +94,23 @@ class MerchantViewModel(
         _uiState.value = _uiState.value.copy(noticeMessage = null)
     }
 
+    fun sendAiMessage(message: String, onResult: (String) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val reply = runCatching {
+                val httpClient = MerchantHttpClient()
+                val body = """{"message":"${message.replace("\"", "\\\"").replace("\n", "\\n")}"}"""
+                when (val res = httpClient.post("/merchant/ai-chat", body)) {
+                    is MerchantApiResult.Success -> {
+                        val json = org.json.JSONObject(res.data)
+                        json.optJSONObject("data")?.optString("reply") ?: "无回复"
+                    }
+                    is MerchantApiResult.Error -> "请求失败：${res.message}"
+                }
+            }.getOrElse { "网络错误：${it.message}" }
+            withContext(Dispatchers.Main) { onResult(reply) }
+        }
+    }
+
     fun showAddDishDialog() {
         _uiState.value = _uiState.value.copy(showAddDishDialog = true)
     }

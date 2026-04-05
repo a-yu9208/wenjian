@@ -35,6 +35,7 @@ private val entryGradients = mapOf(
     FunctionEntry.CategorySetting to listOf(Color(0xFF7C4DFF), Color(0xFFB388FF)),
     FunctionEntry.TableManage to listOf(Color(0xFF00BCD4), Color(0xFF80DEEA)),
     FunctionEntry.PointsActivity to listOf(Color(0xFFFF9800), Color(0xFFFFCC02)),
+    FunctionEntry.AiAssistant to listOf(Color(0xFF2196F3), Color(0xFF64B5F6)),
     FunctionEntry.Profile to listOf(Color(0xFF607D8B), Color(0xFF90A4AE))
 )
 
@@ -125,6 +126,7 @@ private fun FunctionSubPage(entry: FunctionEntry, uiState: MerchantUiState, vm: 
                 FunctionEntry.CategorySetting -> CategorySettingScreen(uiState, vm)
                 FunctionEntry.TableManage -> TableManageScreen(uiState, vm)
                 FunctionEntry.PointsActivity -> PointsActivityScreen(uiState, vm)
+                FunctionEntry.AiAssistant -> AiAssistantScreen(vm)
                 FunctionEntry.Profile -> ProfileScreen(uiState, vm)
             }
         }
