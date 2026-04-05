@@ -426,12 +426,38 @@ async function notifyMerchant() {
       body: JSON.stringify({ tableId: MOCK.tableId, status: 'idle' })
     }).catch(() => {});
   }
+  const checkoutIds = [...serverOrderIds];
   serverOrderIds = [];
   localStorage.removeItem(currentTableKey);
   MOCK.orders = [];
   show('welcome');
   const app = $('#welcome');
   app.innerHTML = `<h1>🔥 ${MOCK.shopName}</h1><div class="sub">${MOCK.table.area} ${MOCK.table.number}号桌</div><div class="sub">等待商家确认收款...</div>`;
+  pollCheckoutStatus(checkoutIds);
+}
+
+function pollCheckoutStatus(orderIds) {
+  if (!orderIds.length) return;
+  const timer = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/customer/order-status?orderId=${orderIds[0]}`);
+      const json = await res.json();
+      if (json.success && json.data && json.data.isPaid) {
+        clearInterval(timer);
+        const app = $('#welcome');
+        app.innerHTML = `<h1>🔥 ${MOCK.shopName}</h1><div class="sub">${MOCK.table.area} ${MOCK.table.number}号桌</div>
+          <div class="sub" style="color:#2e7d32;font-size:18px;margin:20px 0">✅ 支付完成，感谢光临！</div>
+          <div class="sub" style="color:var(--text2)">页面将自动关闭</div>`;
+        setTimeout(() => {
+          if (window.WeixinJSBridge) {
+            window.WeixinJSBridge.call('closeWindow');
+          } else {
+            app.innerHTML = `<h1>🔥 ${MOCK.shopName}</h1><div class="sub">欢迎下次光临！</div>`;
+          }
+        }, 3000);
+      }
+    } catch (e) {}
+  }, 3000);
 }
 
 function goMe() {
