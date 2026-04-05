@@ -72,6 +72,7 @@ data class OrderItem(
 )
 
 data class TableItem(
+    val id: Int = 0,
     val label: String,
     val area: String,
     val status: String,

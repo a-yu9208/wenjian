@@ -132,6 +132,6 @@ class HttpMerchantCloudBridge(
     }
 
     override suspend fun deleteTable(label: String) {
-        httpClient.post("/merchant/table-delete", """{"label":"$label"}""")
+        httpClient.delete("/merchant/tables/$label")
     }
 }

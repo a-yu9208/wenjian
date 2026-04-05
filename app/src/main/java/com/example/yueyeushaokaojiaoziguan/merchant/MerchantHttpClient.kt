@@ -17,6 +17,10 @@ class MerchantHttpClient(
         return request(path = path, method = "POST", body = body)
     }
 
+    fun delete(path: String): MerchantApiResult<String> {
+        return request(path = path, method = "DELETE")
+    }
+
     private fun request(path: String, method: String, body: String? = null): MerchantApiResult<String> {
         val connection = (URL("${baseUrl.trimEnd('/')}$path").openConnection() as HttpURLConnection).apply {
             requestMethod = method

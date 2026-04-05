@@ -126,6 +126,7 @@ object MerchantJsonParsers {
                 val item = tablesArray.optJSONObject(index) ?: continue
                 add(
                     TableItem(
+                        id = item.optInt("id"),
                         label = item.optString("label"),
                         area = item.optString("area"),
                         status = item.optString("status"),
