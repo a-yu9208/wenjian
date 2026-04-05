@@ -50,11 +50,13 @@ class MerchantHttpClient(
                 )
             }
         } catch (error: UnknownHostException) {
-            MerchantApiResult.Error("无法连接服务器，请检查域名或网络")
+            MerchantApiResult.Error("DNS解析失败: ${baseUrl}")
         } catch (error: SocketTimeoutException) {
-            MerchantApiResult.Error("请求超时，请稍后重试")
+            MerchantApiResult.Error("请求超时(8s): $path")
+        } catch (error: javax.net.ssl.SSLException) {
+            MerchantApiResult.Error("SSL错误: ${error.message}")
         } catch (error: Exception) {
-            MerchantApiResult.Error(error.message ?: "网络请求失败")
+            MerchantApiResult.Error("${error.javaClass.simpleName}: ${error.message}")
         } finally {
             connection.disconnect()
         }

@@ -474,13 +474,13 @@ class MerchantViewModel(
                 val allEmpty = nextState.dashboardStats.isEmpty() && nextState.dishes.isEmpty()
                         && nextState.orders.isEmpty() && nextState.tables.isEmpty()
                 _uiState.value = if (allEmpty) {
-                    nextState.copy(errorMessage = "无法连接服务器，请检查网络后点击刷新")
+                    nextState.copy(errorMessage = "数据为空，请检查网络是否能访问 ${MerchantApiConfig.baseApiUrl}")
                 } else nextState
             }.onFailure { error ->
                 _uiState.value = currentState.copy(
                     loading = false,
                     refreshing = false,
-                    errorMessage = error.message ?: "数据加载失败，请稍后重试",
+                    errorMessage = "加载失败: ${error.message}",
                     qrPreviewUrl = buildQrPreview(currentState.qrDraft)
                 )
             }
