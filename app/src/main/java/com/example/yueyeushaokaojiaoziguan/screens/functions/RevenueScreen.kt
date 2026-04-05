@@ -73,7 +73,7 @@ fun RevenueScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
         // 快捷时间段
         Text("快捷查询", fontWeight = FontWeight.SemiBold)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("今日" to 0, "近7天" to 7, "近30天" to 30, "近3个月" to 90, "近1年" to 365).forEach { (label, days) ->
+            listOf("今日" to 0, "近7天" to 7, "近30天" to 30, "近3个月" to 90).forEach { (label, days) ->
                 FilterChip(
                     selected = selectedLabel == label,
                     onClick = {

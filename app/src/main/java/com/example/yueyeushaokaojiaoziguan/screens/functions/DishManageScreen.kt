@@ -39,10 +39,17 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
     var selected by remember { mutableStateOf(setOf<String>()) }
     var editingDish by remember { mutableStateOf<DishItem?>(null) }
     var keyword by remember { mutableStateOf("") }
+    var typeFilter by remember { mutableStateOf("全部") }
 
     val allDishes = uiState.dishes.filter { keyword.isBlank() || it.name.contains(keyword, true) || it.category.contains(keyword, true) }
     val urgentDishes = allDishes.filter { it.type != "套餐" && it.stock < 20 }
-    val normalDishes = allDishes.filter { it.type == "套餐" || it.stock >= 20 }
+    val normalDishes = allDishes.filter { it.type == "套餐" || it.stock >= 20 }.let { list ->
+        when (typeFilter) {
+            "菜品" -> list.filter { it.type != "套餐" }
+            "套餐" -> list.filter { it.type == "套餐" }
+            else -> list
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -86,9 +93,14 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                     item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
                 }
                 // 正常区域
-                if (normalDishes.isNotEmpty()) {
+                if (normalDishes.isNotEmpty() || typeFilter != "全部") {
                     item {
-                        Text("全部菜品", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 4.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf("全部", "菜品", "套餐").forEach { label ->
+                                FilterChip(selected = typeFilter == label, onClick = { typeFilter = label },
+                                    label = { Text(label, fontSize = 12.sp) }, shape = RoundedCornerShape(20.dp))
+                            }
+                        }
                     }
                     itemsIndexed(normalDishes, key = { _, it -> "n_${it.name}" }) { _, dish ->
                         DishCard(dish, manageMode, dish.name in selected, { selected = if (it) selected + dish.name else selected - dish.name }, { editingDish = dish }, vm)
@@ -202,13 +214,15 @@ private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDis
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = uiState.dishDraft.stock,
-                    onValueChange = { vm.updateDishDraft(stock = it.filter(Char::isDigit)) },
-                    label = { Text("库存") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (uiState.dishDraft.type != "套餐") {
+                    OutlinedTextField(
+                        value = uiState.dishDraft.stock,
+                        onValueChange = { vm.updateDishDraft(stock = it.filter(Char::isDigit)) },
+                        label = { Text("库存") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 OutlinedTextField(
                     value = uiState.dishDraft.description,
                     onValueChange = { vm.updateDishDraft(description = it) },
