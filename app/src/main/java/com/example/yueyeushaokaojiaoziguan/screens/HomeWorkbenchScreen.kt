@@ -42,7 +42,26 @@ fun HomeWorkbenchScreen(
                 it.status in listOf("待处理", "制作中") && it.dishes.any { d -> d.quickServe && !d.served }
             }
             HomeSubTab.Cooking -> uiState.orders.filter { it.status == "制作中" }
-            HomeSubTab.AwaitingPayment -> uiState.orders.filter { it.status == "待结账" }
+            HomeSubTab.AwaitingPayment -> {
+                // 按桌号合并同桌订单
+                val raw = uiState.orders.filter { it.status == "待结账" }
+                raw.groupBy { it.tableLabel }.map { (_, group) ->
+                    if (group.size == 1) group.first()
+                    else {
+                        val allDishes = group.flatMap { it.dishes }
+                        val totalAmount = group.sumOf {
+                            it.amount.replace("¥", "").replace(",", "").toDoubleOrNull() ?: 0.0
+                        }
+                        val first = group.first()
+                        first.copy(
+                            summary = group.joinToString("、") { it.summary },
+                            amount = "¥%.2f".format(totalAmount),
+                            dishes = allDishes,
+                            isAppend = false
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -53,7 +72,8 @@ fun HomeWorkbenchScreen(
                 it.status in listOf("待处理", "制作中") && it.dishes.any { d -> d.quickServe && !d.served }
             },
             HomeSubTab.Cooking to uiState.orders.count { it.status == "制作中" },
-            HomeSubTab.AwaitingPayment to uiState.orders.count { it.status == "待结账" }
+            // 按桌号去重计数
+            HomeSubTab.AwaitingPayment to uiState.orders.filter { it.status == "待结账" }.map { it.tableLabel }.distinct().size
         )
     }
 
