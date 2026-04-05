@@ -75,9 +75,7 @@ private fun ShaokaoMerchantApp() {
 
     // 启动时检查更新
     LaunchedEffect(Unit) {
-        val currentVersionCode = try {
-            context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode.toInt()
-        } catch (_: Exception) { 1 }
+        val currentVersionCode = context.packageManager.getPackageInfo(context.packageName, 0).versionCode
         AppUpdater.checkUpdate { info ->
             if (info != null && info.versionCode > currentVersionCode) updateInfo = info
         }
