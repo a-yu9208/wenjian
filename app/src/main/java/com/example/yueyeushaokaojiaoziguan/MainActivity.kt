@@ -68,7 +68,6 @@ private fun ShaokaoMerchantApp() {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var funcResetTrigger by remember { mutableIntStateOf(0) }
-    var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
     var downloading by remember { mutableStateOf(false) }
     var downloadProgress by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
@@ -76,9 +75,7 @@ private fun ShaokaoMerchantApp() {
     // 启动时检查更新
     LaunchedEffect(Unit) {
         val currentVersionCode = context.packageManager.getPackageInfo(context.packageName, 0).versionCode
-        AppUpdater.checkUpdate { info ->
-            if (info != null && info.versionCode > currentVersionCode) updateInfo = info
-        }
+        vm.checkForUpdate(currentVersionCode)
     }
 
     LaunchedEffect(uiState.noticeMessage, uiState.errorMessage) {
@@ -169,10 +166,10 @@ private fun ShaokaoMerchantApp() {
     }
 
     // 更新弹窗
-    updateInfo?.let { info ->
+    uiState.pendingUpdate?.let { info ->
         val downloadDone = downloading && downloadProgress >= 100
         AlertDialog(
-            onDismissRequest = { if (!downloading) updateInfo = null },
+            onDismissRequest = { if (!downloading) vm.dismissUpdate() },
             title = { Text("发现新版本 v${info.versionName}", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
@@ -193,7 +190,7 @@ private fun ShaokaoMerchantApp() {
                     }
                 }
             },
-            dismissButton = { if (!downloading) TextButton(onClick = { updateInfo = null }) { Text("稍后再说") } }
+            dismissButton = { if (!downloading) TextButton(onClick = { vm.dismissUpdate() }) { Text("稍后再说") } }
         )
     }
 }

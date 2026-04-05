@@ -108,6 +108,18 @@ class MerchantViewModel(
         _uiState.value = _uiState.value.copy(checkoutAlert = null)
     }
 
+    fun checkForUpdate(currentVersionCode: Int) {
+        AppUpdater.checkUpdate { info ->
+            if (info != null && info.versionCode > currentVersionCode) {
+                _uiState.value = _uiState.value.copy(pendingUpdate = info)
+            }
+        }
+    }
+
+    fun dismissUpdate() {
+        _uiState.value = _uiState.value.copy(pendingUpdate = null)
+    }
+
     fun sendAiMessage(message: String, onResult: (String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val reply = runCatching {

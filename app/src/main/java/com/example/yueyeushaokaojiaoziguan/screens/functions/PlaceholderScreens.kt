@@ -230,7 +230,11 @@ fun ProfileScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                     checking = true; checkResult = null
                     com.example.yueyeushaokaojiaoziguan.merchant.AppUpdater.checkUpdate { info ->
                         checking = false
-                        checkResult = if (info != null && info.versionCode > versionCode) "发现新版本 v${info.versionName}，请前往首页更新" else "当前已是最新版本"
+                        if (info != null && info.versionCode > versionCode) {
+                            vm.checkForUpdate(versionCode)
+                        } else {
+                            checkResult = "当前已是最新版本"
+                        }
                     }
                 }, enabled = !checking) { Text(if (checking) "检测中..." else "检测最新版本") }
                 checkResult?.let { Spacer(Modifier.height(4.dp)); Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary) }
