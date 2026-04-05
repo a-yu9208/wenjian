@@ -66,7 +66,31 @@ object MerchantJsonParsers {
                         summary = item.optString("summary"),
                         amount = item.optString("amount"),
                         status = item.optString("status"),
-                        time = item.optString("time")
+                        time = item.optString("time"),
+                        area = item.optString("area"),
+                        isAppend = item.optBoolean("isAppend", false),
+                        appendIndex = item.optInt("appendIndex", 0),
+                        dishes = parseOrderDishes(item.optJSONArray("dishes")),
+                        utensilCount = item.optInt("utensilCount", 0)
+                    )
+                )
+            }
+        }
+    }
+
+    private fun parseOrderDishes(arr: JSONArray?): List<OrderDishItem> {
+        if (arr == null || arr.length() == 0) return emptyList()
+        return buildList {
+            for (i in 0 until arr.length()) {
+                val d = arr.optJSONObject(i) ?: continue
+                add(
+                    OrderDishItem(
+                        name = d.optString("name"),
+                        quantity = d.optInt("quantity", d.optInt("qty", 1)),
+                        note = d.optString("note"),
+                        served = d.optBoolean("served", false),
+                        quickServe = d.optBoolean("quickServe", false),
+                        subItems = parseOrderDishes(d.optJSONArray("subItems"))
                     )
                 )
             }

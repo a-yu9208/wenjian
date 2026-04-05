@@ -26,7 +26,8 @@ let cart = {}; // { dishId: { qty, note } }
 let notes = {}; // { dishId: noteText }
 let currentPage = 'welcome';
 let usePoints = false;
-let serverOrderIds = JSON.parse(localStorage.getItem('orderIds') || '[]');
+let currentTableKey = '';  // 当前桌的 localStorage key
+let serverOrderIds = [];
 let pollTimer = null;
 
 // ========== 工具函数 ==========
@@ -205,7 +206,7 @@ async function submitOrder() {
       const json = await res.json();
       if (json.success && json.data) {
         serverOrderIds.push(json.data.orderId);
-        localStorage.setItem('orderIds', JSON.stringify(serverOrderIds));
+        localStorage.setItem(currentTableKey, JSON.stringify(serverOrderIds));
       } else {
         showToast('下单失败: ' + (json.error || json.msg || '未知错误'));
         console.error('submitOrder fail:', json);
@@ -227,6 +228,14 @@ async function submitOrder() {
   show('order');
   showToast('下单成功！');
   startOrderPoll();
+  // 首单时自动将桌台状态更新为使用中
+  if (!isAppend && MOCK.tableId) {
+    fetch(`${API_BASE}/merchant/table-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tableId: MOCK.tableId, status: 'occupied' })
+    }).catch(() => {});
+  }
   // 显示菜单页的查看订单按钮
   const fb = document.getElementById('orderFloatBtn');
   if (fb) fb.classList.remove('hidden');
@@ -352,8 +361,16 @@ async function notifyMerchant() {
   }
 
   if (!serverOrderIds.length) showToast('已通知商家，请等待服务员收款');
+  // 结账后自动将桌台状态更新为空闲
+  if (MOCK.tableId) {
+    fetch(`${API_BASE}/merchant/table-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tableId: MOCK.tableId, status: 'idle' })
+    }).catch(() => {});
+  }
   serverOrderIds = [];
-  localStorage.removeItem('orderIds');
+  localStorage.removeItem(currentTableKey);
   MOCK.orders = [];
   show('welcome');
   const app = $('#welcome');
@@ -446,6 +463,12 @@ async function init() {
   const number = params.get('number') || '8';
   MOCK.table.area = { outside:'室外', first:'一楼', second:'二楼' }[section] || section;
   MOCK.table.number = number;
+
+  // 按桌号隔离订单数据
+  currentTableKey = `orderIds_${section}_${number}`;
+  serverOrderIds = JSON.parse(localStorage.getItem(currentTableKey) || '[]');
+  // 重置本桌的本地订单
+  MOCK.orders = [];
 
   // 尝试从后端获取店名和桌台信息
   await fetchTableInfo(section, number);
