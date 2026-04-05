@@ -10,5 +10,4 @@ object MerchantApiConfig {
     const val tablesPath = "/merchant/tables"
     const val tableQrPath = "/merchant/table-qrcode"
     const val orderActionsPath = "/merchant/order-actions"
-    const val dishActionsPath = "/merchant/dishes/actions"
 }

@@ -42,6 +42,10 @@ class CloudBackedMerchantRepository(
         bridge.createDish(dish)
     }
 
+    override suspend fun deleteDishes(names: Set<String>) {
+        bridge.deleteDishes(names)
+    }
+
     override suspend fun pushTableStatus(label: String, status: String) {
         bridge.pushTableStatus(label, status)
     }

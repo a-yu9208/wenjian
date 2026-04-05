@@ -185,6 +185,9 @@ class MerchantViewModel(
             dishes = _uiState.value.dishes.filterNot { it.name in names },
             noticeMessage = "已删除 ${names.size} 道菜品"
         )
+        viewModelScope.launch {
+            runCatching { repository.deleteDishes(names) }
+        }
     }
 
     fun addDishFromDraft(): Boolean {

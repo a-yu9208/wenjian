@@ -70,47 +70,28 @@ class HttpMerchantCloudBridge(
         val statusMap = mapOf("待处理" to "Pending", "制作中" to "Grilling", "待结账" to "Checkout", "已完成" to "Completed")
         val enStatus = statusMap[status] ?: status
         val orderId = tableLabel.toIntOrNull()
-        val requestBody = if (orderId != null) {
-            """{"action":"updateStatus","orderId":$orderId,"status":"$enStatus"}"""
-        } else {
-            """{"action":"updateOrderStatus","tableLabel":"$tableLabel","status":"$enStatus"}"""
-        }
+        val requestBody = """{"action":"updateStatus","orderId":${orderId ?: 0},"status":"$enStatus"}"""
         httpClient.post(MerchantApiConfig.orderActionsPath, requestBody)
     }
 
     override suspend fun pushDishStock(name: String, stock: Int) {
-        val requestBody = """
-            {
-              "action": "updateStock",
-              "name": "$name",
-              "stock": $stock
-            }
-        """.trimIndent()
-        httpClient.post(MerchantApiConfig.dishActionsPath, requestBody)
+        val requestBody = """{"name":"$name","stock":$stock}"""
+        httpClient.post("/merchant/dishes/stock", requestBody)
     }
 
     override suspend fun createDish(dish: DishItem) {
-        val requestBody = """
-            {
-              "action": "createDish",
-              "name": "${dish.name}",
-              "category": "${dish.category}",
-              "price": "${dish.price}",
-              "stock": ${dish.stock},
-              "type": "${dish.type}"
-            }
-        """.trimIndent()
-        httpClient.post(MerchantApiConfig.dishActionsPath, requestBody)
+        val price = dish.price.replace("¥", "").toDoubleOrNull() ?: 0.0
+        val requestBody = """{"name":"${dish.name}","category":"${dish.category}","price":$price,"stock":${dish.stock},"type":"${dish.type}","description":"${dish.description}","minOrder":${dish.minOrder}}"""
+        httpClient.post("/merchant/dishes", requestBody)
+    }
+
+    override suspend fun deleteDishes(names: Set<String>) {
+        val namesJson = names.joinToString(",") { "\"$it\"" }
+        httpClient.post("/merchant/dishes/delete", """{"names":[$namesJson]}""")
     }
 
     override suspend fun pushTableStatus(label: String, status: String) {
-        val requestBody = """
-            {
-              "action": "updateTableStatus",
-              "label": "$label",
-              "status": "$status"
-            }
-        """.trimIndent()
-        httpClient.post(MerchantApiConfig.orderActionsPath, requestBody)
+        val requestBody = """{"label":"$label","status":"$status"}"""
+        httpClient.post("/merchant/table-status", requestBody)
     }
 }
