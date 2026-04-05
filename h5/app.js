@@ -249,6 +249,9 @@ function goBill() {
 
 function notifyMerchant() {
   alert('已通知商家，请等待服务员前来收款');
+  show('welcome');
+  const app = $('#welcome');
+  app.innerHTML = `<h1>🔥 ${MOCK.shopName}</h1><div class="sub">${MOCK.table.area} ${MOCK.table.number}号桌</div><div class="sub">等待商家确认收款...</div>`;
 }
 
 function goMe() {

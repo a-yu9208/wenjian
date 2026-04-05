@@ -64,7 +64,8 @@ private val tabIcons: Map<MerchantTab, ImageVector> = mapOf(
 
 @Composable
 private fun ShaokaoMerchantApp() {
-    var currentTab by rememberSaveable { mutableStateOf(MerchantTab.Home) }
+    var currentTabName by rememberSaveable { mutableStateOf(MerchantTab.Home.name) }
+    val currentTab = MerchantTab.entries.find { it.name == currentTabName } ?: MerchantTab.Home
     val vm: MerchantViewModel = viewModel(
         factory = MerchantViewModelFactory(MerchantAppContainer.repository)
     )
@@ -87,7 +88,7 @@ private fun ShaokaoMerchantApp() {
                 MerchantTab.entries.forEach { tab ->
                     NavigationBarItem(
                         selected = currentTab == tab,
-                        onClick = { currentTab = tab },
+                        onClick = { currentTabName = tab.name },
                         icon = {
                             Icon(
                                 imageVector = tabIcons[tab] ?: Icons.Default.Home,
