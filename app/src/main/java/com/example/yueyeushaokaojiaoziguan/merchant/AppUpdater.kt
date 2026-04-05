@@ -7,6 +7,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import androidx.core.content.FileProvider
 import java.io.File
 
@@ -19,6 +21,7 @@ data class UpdateInfo(
 
 object AppUpdater {
     private var downloadId: Long = -1
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     fun checkUpdate(onResult: (UpdateInfo?) -> Unit) {
         Thread {
@@ -29,14 +32,15 @@ object AppUpdater {
                 val text = conn.inputStream.bufferedReader().readText()
                 conn.disconnect()
                 val json = org.json.JSONObject(text)
-                val data = json.optJSONObject("data") ?: return@Thread onResult(null)
-                onResult(UpdateInfo(
+                val data = json.optJSONObject("data") ?: return@Thread mainHandler.post { onResult(null) }
+                val info = UpdateInfo(
                     versionCode = data.optInt("versionCode"),
                     versionName = data.optString("versionName"),
                     downloadUrl = data.optString("downloadUrl"),
                     changelog = data.optString("changelog")
-                ))
-            } catch (_: Exception) { onResult(null) }
+                )
+                mainHandler.post { onResult(info) }
+            } catch (_: Exception) { mainHandler.post { onResult(null) } }
         }.start()
     }
 
@@ -76,7 +80,7 @@ object AppUpdater {
                 if (cursor.moveToFirst()) {
                     val downloaded = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
                     val total = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
-                    if (total > 0) onProgress((downloaded * 100 / total).toInt())
+                    if (total > 0) mainHandler.post { onProgress((downloaded * 100 / total).toInt()) }
                     val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
                     cursor.close()
                     if (status == DownloadManager.STATUS_SUCCESSFUL || status == DownloadManager.STATUS_FAILED) break
