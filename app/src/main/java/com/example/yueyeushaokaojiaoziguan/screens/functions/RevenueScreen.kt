@@ -1,18 +1,25 @@
 package com.example.yueyeushaokaojiaoziguan.screens.functions
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantUiState
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantViewModel
+import com.example.yueyeushaokaojiaoziguan.ui.theme.GradientSunset
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -42,16 +49,23 @@ fun RevenueScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // 营业额显示
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-            Column(Modifier.fillMaxWidth().padding(20.dp)) {
-                Text("$selectedLabel 营业额", color = MaterialTheme.colorScheme.onPrimaryContainer)
-                Spacer(Modifier.height(4.dp))
-                if (revenue != null) {
-                    Text("¥${"%.2f".format(revenue)}", fontWeight = FontWeight.Bold, fontSize = 36.sp)
-                    Spacer(Modifier.height(4.dp))
-                    Text("共 $orderCount 单", fontSize = 14.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                } else {
-                    CircularProgressIndicator(Modifier.size(24.dp))
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.shadow(6.dp, RoundedCornerShape(20.dp))
+        ) {
+            Box(Modifier.fillMaxWidth().background(Brush.horizontalGradient(GradientSunset)).clip(RoundedCornerShape(20.dp))) {
+                Column(Modifier.fillMaxWidth().padding(24.dp)) {
+                    Text("$selectedLabel 营业额", color = Color.White.copy(alpha = 0.85f))
+                    Spacer(Modifier.height(8.dp))
+                    if (revenue != null) {
+                        val animRevenue by animateFloatAsState(revenue!!.toFloat(), tween(800), label = "rev")
+                        Text("¥${"%.2f".format(animRevenue.toDouble())}", fontWeight = FontWeight.Bold, fontSize = 36.sp, color = Color.White)
+                        Spacer(Modifier.height(4.dp))
+                        Text("共 $orderCount 单", fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
+                    } else {
+                        CircularProgressIndicator(Modifier.size(24.dp), color = Color.White)
+                    }
                 }
             }
         }
@@ -69,7 +83,8 @@ fun RevenueScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                         if (days > 0) c.add(Calendar.DAY_OF_YEAR, -days + 1)
                         query(fmt.format(c.time), end)
                     },
-                    label = { Text(label, fontSize = 12.sp) }
+                    label = { Text(label, fontSize = 12.sp) },
+                    shape = RoundedCornerShape(20.dp)
                 )
             }
         }

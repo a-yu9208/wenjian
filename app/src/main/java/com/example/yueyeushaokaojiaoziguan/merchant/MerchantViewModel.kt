@@ -150,7 +150,8 @@ class MerchantViewModel(
         minOrder: String? = null,
         quickServe: Boolean? = null,
         discountEnabled: Boolean? = null,
-        discountPrice: String? = null
+        discountPrice: String? = null,
+        imageUri: String? = null
     ) {
         val current = _uiState.value.dishDraft
         _uiState.value = _uiState.value.copy(
@@ -164,7 +165,8 @@ class MerchantViewModel(
                 minOrder = minOrder ?: current.minOrder,
                 quickServe = quickServe ?: current.quickServe,
                 discountEnabled = discountEnabled ?: current.discountEnabled,
-                discountPrice = discountPrice ?: current.discountPrice
+                discountPrice = discountPrice ?: current.discountPrice,
+                imageUri = imageUri ?: current.imageUri
             )
         )
     }
@@ -324,7 +326,8 @@ class MerchantViewModel(
                 val dp = draft.discountPrice.trim()
                 if (dp.startsWith("¥")) dp else "¥$dp"
             } else "",
-            comboItems = if (draft.type == "套餐") draft.comboItems else emptyList()
+            comboItems = if (draft.type == "套餐") draft.comboItems else emptyList(),
+            imageUri = draft.imageUri
         )
 
         _uiState.value = _uiState.value.copy(

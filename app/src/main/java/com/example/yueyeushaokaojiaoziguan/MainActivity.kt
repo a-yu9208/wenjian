@@ -4,39 +4,34 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.List
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.yueyeushaokaojiaoziguan.merchant.MerchantAppContainer
-import com.example.yueyeushaokaojiaoziguan.merchant.MerchantTab
-import com.example.yueyeushaokaojiaoziguan.merchant.MerchantViewModel
-import com.example.yueyeushaokaojiaoziguan.merchant.MerchantViewModelFactory
-import com.example.yueyeushaokaojiaoziguan.screens.FunctionsScreen
-import com.example.yueyeushaokaojiaoziguan.screens.HomeWorkbenchScreen
-import com.example.yueyeushaokaojiaoziguan.screens.OrderHistoryScreen
+import com.example.yueyeushaokaojiaoziguan.merchant.*
+import com.example.yueyeushaokaojiaoziguan.screens.*
+import com.example.yueyeushaokaojiaoziguan.ui.theme.GradientOrange
 import com.example.yueyeushaokaojiaoziguan.ui.theme.YueyeushaokaojiaoziguanTheme
 
 class MainActivity : ComponentActivity() {
@@ -45,10 +40,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             YueyeushaokaojiaoziguanTheme(dynamicColor = false) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
+                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     ShaokaoMerchantApp()
                 }
             }
@@ -56,19 +48,19 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private val tabIcons: Map<MerchantTab, ImageVector> = mapOf(
-    MerchantTab.Home to Icons.Default.Home,
-    MerchantTab.Orders to Icons.Default.List,
-    MerchantTab.Functions to Icons.Default.Settings
+private data class TabInfo(val filled: ImageVector, val outlined: ImageVector, val label: String)
+
+private val tabInfoMap = mapOf(
+    MerchantTab.Home to TabInfo(Icons.Filled.Home, Icons.Outlined.Home, "首页"),
+    MerchantTab.Orders to TabInfo(Icons.Filled.List, Icons.Outlined.List, "订单"),
+    MerchantTab.Functions to TabInfo(Icons.Filled.Settings, Icons.Outlined.Settings, "功能")
 )
 
 @Composable
 private fun ShaokaoMerchantApp() {
     var currentTabName by rememberSaveable { mutableStateOf(MerchantTab.Home.name) }
     val currentTab = MerchantTab.entries.find { it.name == currentTabName } ?: MerchantTab.Home
-    val vm: MerchantViewModel = viewModel(
-        factory = MerchantViewModelFactory(MerchantAppContainer.repository)
-    )
+    val vm: MerchantViewModel = viewModel(factory = MerchantViewModelFactory(MerchantAppContainer.repository))
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -76,49 +68,58 @@ private fun ShaokaoMerchantApp() {
         val msg = uiState.errorMessage ?: uiState.noticeMessage
         if (msg != null) {
             snackbarHostState.showSnackbar(msg)
-            vm.dismissError()
-            vm.dismissNotice()
+            vm.dismissError(); vm.dismissNotice()
         }
     }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 0.dp,
+                modifier = Modifier.shadow(8.dp)
+            ) {
                 MerchantTab.entries.forEach { tab ->
+                    val info = tabInfoMap[tab]!!
+                    val selected = currentTab == tab
+                    val iconScale by animateFloatAsState(
+                        if (selected) 1.15f else 1f,
+                        spring(dampingRatio = 0.6f), label = "s"
+                    )
                     NavigationBarItem(
-                        selected = currentTab == tab,
+                        selected = selected,
                         onClick = { currentTabName = tab.name },
                         icon = {
-                            Icon(
-                                imageVector = tabIcons[tab] ?: Icons.Default.Home,
-                                contentDescription = tab.label
-                            )
+                            Box(contentAlignment = Alignment.Center) {
+                                AnimatedVisibility(selected, enter = fadeIn(tween(300)) + scaleIn(initialScale = 0.8f), exit = fadeOut(tween(200))) {
+                                    Box(Modifier.width(56.dp).height(32.dp).clip(RoundedCornerShape(16.dp))
+                                        .background(Brush.horizontalGradient(GradientOrange), alpha = 0.15f))
+                                }
+                                Icon(
+                                    if (selected) info.filled else info.outlined, info.label,
+                                    Modifier.size((24 * iconScale).dp),
+                                    tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         },
-                        label = { Text(tab.label) }
+                        label = { Text(info.label, fontSize = 11.sp, color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                        colors = NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.surface)
                     )
                 }
             }
         }
     ) { innerPadding ->
-        when (currentTab) {
-            MerchantTab.Home -> HomeWorkbenchScreen(
-                uiState = uiState,
-                onAdvanceOrder = vm::advanceOrderStatus,
-                onToggleDishServed = vm::toggleDishServed,
-                onRefresh = vm::refreshMerchantData,
-                modifier = Modifier.padding(innerPadding)
-            )
-            MerchantTab.Orders -> OrderHistoryScreen(
-                uiState = uiState,
-                vm = vm,
-                modifier = Modifier.padding(innerPadding)
-            )
-            MerchantTab.Functions -> FunctionsScreen(
-                uiState = uiState,
-                vm = vm,
-                modifier = Modifier.padding(innerPadding)
-            )
+        AnimatedContent(
+            targetState = currentTab,
+            transitionSpec = { fadeIn(tween(250)) + scaleIn(initialScale = 0.96f, animationSpec = tween(250)) togetherWith fadeOut(tween(150)) },
+            label = "page"
+        ) { tab ->
+            when (tab) {
+                MerchantTab.Home -> HomeWorkbenchScreen(uiState, vm::advanceOrderStatus, vm::toggleDishServed, vm::refreshMerchantData, Modifier.padding(innerPadding))
+                MerchantTab.Orders -> OrderHistoryScreen(uiState, vm, Modifier.padding(innerPadding))
+                MerchantTab.Functions -> FunctionsScreen(uiState, vm, Modifier.padding(innerPadding))
+            }
         }
     }
 }

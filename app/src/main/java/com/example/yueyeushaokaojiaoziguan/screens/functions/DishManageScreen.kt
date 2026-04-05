@@ -3,11 +3,13 @@ package com.example.yueyeushaokaojiaoziguan.screens.functions
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -16,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -58,11 +61,17 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                 contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(uiState.dishes, key = { it.name }) { dish ->
+                itemsIndexed(uiState.dishes, key = { _, it -> it.name }) { index, dish ->
+                    val visible = remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) { visible.value = true }
+                    AnimatedVisibility(
+                        visible.value,
+                        enter = slideInHorizontally(tween(300, delayMillis = index * 40)) { it / 3 } + fadeIn(tween(300, delayMillis = index * 40))
+                    ) {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(1.dp),
-                        modifier = Modifier.clickable(enabled = !manageMode) { editingDish = dish }
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.shadow(3.dp, RoundedCornerShape(16.dp)).clickable(enabled = !manageMode) { editingDish = dish }
                     ) {
                         Row(
                             Modifier.fillMaxWidth().padding(12.dp),
@@ -128,6 +137,7 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                             }
                         }
                     }
+                    } // AnimatedVisibility
                 }
             }
         }
@@ -162,6 +172,18 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
 @Composable
 private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDismiss: () -> Unit) {
     var comboItems by remember { mutableStateOf(uiState.dishDraft.comboItems) }
+    var uploading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri ?: return@rememberLauncherForActivityResult
+        uploading = true
+        val bytes = context.contentResolver.openInputStream(uri)?.readBytes() ?: return@rememberLauncherForActivityResult
+        vm.uploadDishImage(bytes, "dish_${System.currentTimeMillis()}.jpg") { url ->
+            if (url != null) vm.updateDishDraft(imageUri = url)
+            uploading = false
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -171,6 +193,22 @@ private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDis
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // 图片上传
+                Box(
+                    Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { launcher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (uploading) {
+                        CircularProgressIndicator(Modifier.size(24.dp))
+                    } else if (uiState.dishDraft.imageUri.isNotBlank()) {
+                        val imgUrl = if (uiState.dishDraft.imageUri.startsWith("http")) uiState.dishDraft.imageUri else "${MerchantApiConfig.baseApiUrl}${uiState.dishDraft.imageUri}"
+                        AsyncImage(model = imgUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    } else {
+                        Text("点击上传图片", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
                 OutlinedTextField(
                     value = uiState.dishDraft.name,
                     onValueChange = { vm.updateDishDraft(name = it) },

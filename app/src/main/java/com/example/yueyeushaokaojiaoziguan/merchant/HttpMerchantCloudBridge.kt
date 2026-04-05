@@ -122,7 +122,7 @@ class HttpMerchantCloudBridge(
                 """{"name":"${it.name}","quantity":${it.quantity}}"""
             }
         } else "[]"
-        val requestBody = """{"name":"${dish.name}","category":"${dish.category}","price":$price,"stock":${dish.stock},"type":"${dish.type}","description":"${dish.description}","minOrder":${dish.minOrder},"quickServe":${dish.quickServe},"comboItems":$comboJson}"""
+        val requestBody = """{"name":"${dish.name}","category":"${dish.category}","price":$price,"stock":${dish.stock},"type":"${dish.type}","description":"${dish.description}","minOrder":${dish.minOrder},"quickServe":${dish.quickServe},"comboItems":$comboJson,"imageUrl":"${dish.imageUri}"}"""
         httpClient.post("/merchant/dishes", requestBody)
     }
 

@@ -104,7 +104,8 @@ data class DishDraft(
     val quickServe: Boolean = false,
     val discountEnabled: Boolean = false,
     val discountPrice: String = "",
-    val comboItems: List<ComboItem> = emptyList()
+    val comboItems: List<ComboItem> = emptyList(),
+    val imageUri: String = ""
 )
 
 data class PointsConfig(
