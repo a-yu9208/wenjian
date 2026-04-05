@@ -130,4 +130,8 @@ class HttpMerchantCloudBridge(
         val requestBody = """{"label":"$label","status":"$status"}"""
         httpClient.post("/merchant/table-status", requestBody)
     }
+
+    override suspend fun deleteTable(label: String) {
+        httpClient.post("/merchant/table-delete", """{"label":"$label"}""")
+    }
 }

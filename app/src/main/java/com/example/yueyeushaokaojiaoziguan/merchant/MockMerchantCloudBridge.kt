@@ -35,4 +35,5 @@ class MockMerchantCloudBridge : MerchantCloudBridge {
     override suspend fun deleteDishes(names: Set<String>) = Unit
 
     override suspend fun pushTableStatus(label: String, status: String) = Unit
+    override suspend fun deleteTable(label: String) = Unit
 }

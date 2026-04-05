@@ -23,4 +23,5 @@ interface MerchantCloudBridge {
     suspend fun createDish(dish: DishItem)
     suspend fun deleteDishes(names: Set<String>)
     suspend fun pushTableStatus(label: String, status: String)
+    suspend fun deleteTable(label: String)
 }

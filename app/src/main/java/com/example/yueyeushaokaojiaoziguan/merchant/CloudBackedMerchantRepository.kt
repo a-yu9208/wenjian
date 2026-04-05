@@ -49,4 +49,8 @@ class CloudBackedMerchantRepository(
     override suspend fun pushTableStatus(label: String, status: String) {
         bridge.pushTableStatus(label, status)
     }
+
+    override suspend fun deleteTable(label: String) {
+        bridge.deleteTable(label)
+    }
 }

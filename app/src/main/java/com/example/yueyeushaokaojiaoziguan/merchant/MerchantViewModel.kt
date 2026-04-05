@@ -292,6 +292,14 @@ class MerchantViewModel(
             tables = _uiState.value.tables.filterNot { it.label == label },
             noticeMessage = "已删除 $label"
         )
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { repository.deleteTable(label) }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "桌台已本地删除，但同步后端失败：${it.message ?: "请稍后重试"}"
+                    )
+                }
+        }
     }
 
     fun toggleTableStatus(label: String) {
