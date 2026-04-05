@@ -39,4 +39,6 @@ class MockMerchantCloudBridge : MerchantCloudBridge {
     override suspend fun updateDish(dish: DishItem) = Unit
     override suspend fun batchUpdateCategory(names: Set<String>, category: String) = Unit
     override suspend fun pushDishServed(orderId: String, dishName: String) = Unit
+    override suspend fun getRevenue(start: String, end: String) = Pair(0.0, 0)
+    override suspend fun getOrdersByDate(start: String, end: String): List<com.example.yueyeushaokaojiaoziguan.merchant.OrderItem> = emptyList()
 }

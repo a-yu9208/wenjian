@@ -155,6 +155,24 @@ class HttpMerchantCloudBridge(
         httpClient.post(MerchantApiConfig.orderActionsPath, """{"action":"toggleServed","orderId":$orderId,"dishName":"$dishName"}""")
     }
 
+    override suspend fun getRevenue(start: String, end: String): Pair<Double, Int> {
+        return when (val res = httpClient.get("/merchant/revenue?start=$start&end=$end")) {
+            is MerchantApiResult.Success -> {
+                val json = org.json.JSONObject(res.data)
+                val data = json.optJSONObject("data")
+                Pair(data?.optDouble("revenue", 0.0) ?: 0.0, data?.optInt("orderCount", 0) ?: 0)
+            }
+            is MerchantApiResult.Error -> Pair(0.0, 0)
+        }
+    }
+
+    override suspend fun getOrdersByDate(start: String, end: String): List<OrderItem> {
+        return when (val res = httpClient.get("${MerchantApiConfig.ordersPath}?start=$start&end=$end")) {
+            is MerchantApiResult.Success -> MerchantJsonParsers.parseOrders(res.data)
+            is MerchantApiResult.Error -> emptyList()
+        }
+    }
+
     fun uploadImage(imageBytes: ByteArray, fileName: String): String? {
         val boundary = "----FormBoundary${System.currentTimeMillis()}"
         val url = java.net.URL("${baseUrl.trimEnd('/')}/merchant/upload")

@@ -101,7 +101,7 @@ private fun FunctionSubPage(
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             when (entry) {
-                FunctionEntry.Revenue -> RevenueScreen(uiState)
+                FunctionEntry.Revenue -> RevenueScreen(uiState, vm)
                 FunctionEntry.DishManage -> DishManageScreen(uiState, vm)
                 FunctionEntry.CategorySetting -> CategorySettingScreen(uiState, vm)
                 FunctionEntry.TableManage -> TableManageScreen(uiState, vm)

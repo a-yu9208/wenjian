@@ -503,6 +503,20 @@ class MerchantViewModel(
         )
     }
 
+    fun queryRevenue(start: String, end: String, onResult: (Double, Int) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = runCatching { repository.getRevenue(start, end) }.getOrElse { Pair(0.0, 0) }
+            withContext(Dispatchers.Main) { onResult(result.first, result.second) }
+        }
+    }
+
+    fun queryOrdersByDate(start: String, end: String, onResult: (List<OrderItem>) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = runCatching { repository.getOrdersByDate(start, end) }.getOrElse { emptyList() }
+            withContext(Dispatchers.Main) { onResult(result) }
+        }
+    }
+
     fun queryPoints(phone: String, onResult: (String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val result = runCatching {

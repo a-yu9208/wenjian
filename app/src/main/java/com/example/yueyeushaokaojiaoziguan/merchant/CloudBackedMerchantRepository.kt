@@ -65,4 +65,14 @@ class CloudBackedMerchantRepository(
     override suspend fun pushDishServed(orderId: String, dishName: String) {
         bridge.pushDishServed(orderId, dishName)
     }
+
+    override suspend fun getRevenue(start: String, end: String): Pair<Double, Int> {
+        return bridge.getRevenue(start, end)
+    }
+
+    override suspend fun getOrdersByDate(start: String, end: String): List<OrderItem> {
+        return bridge.getOrdersByDate(start, end).map { order ->
+            order.copy(status = MerchantUiTextMapper.localizeOrderStatus(order.status))
+        }
+    }
 }

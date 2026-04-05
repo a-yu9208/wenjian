@@ -111,6 +111,7 @@ private fun ShaokaoMerchantApp() {
             )
             MerchantTab.Orders -> OrderHistoryScreen(
                 uiState = uiState,
+                vm = vm,
                 modifier = Modifier.padding(innerPadding)
             )
             MerchantTab.Functions -> FunctionsScreen(

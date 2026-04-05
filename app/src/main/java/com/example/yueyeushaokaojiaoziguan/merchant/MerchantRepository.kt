@@ -16,4 +16,6 @@ interface MerchantRepository {
     suspend fun updateDish(dish: DishItem)
     suspend fun batchUpdateCategory(names: Set<String>, category: String)
     suspend fun pushDishServed(orderId: String, dishName: String)
+    suspend fun getRevenue(start: String, end: String): Pair<Double, Int>
+    suspend fun getOrdersByDate(start: String, end: String): List<OrderItem>
 }
