@@ -474,7 +474,20 @@ class MerchantViewModel(
                 val allEmpty = nextState.dashboardStats.isEmpty() && nextState.dishes.isEmpty()
                         && nextState.orders.isEmpty() && nextState.tables.isEmpty()
                 _uiState.value = if (allEmpty) {
-                    nextState.copy(errorMessage = "接口返回数据解析为空，请查看Logcat标签SHAOKAO")
+                    // 直接再请求一次 dashboard 看原始返回
+                    val debugResult = try {
+                        val url = java.net.URL("${MerchantApiConfig.baseApiUrl}/merchant/dashboard")
+                        val conn = url.openConnection() as java.net.HttpURLConnection
+                        conn.connectTimeout = 8000
+                        conn.readTimeout = 8000
+                        val code = conn.responseCode
+                        val body = conn.inputStream?.bufferedReader()?.readText()?.take(100) ?: "null"
+                        conn.disconnect()
+                        "HTTP $code: $body"
+                    } catch (e: Exception) {
+                        "${e.javaClass.simpleName}: ${e.message}"
+                    }
+                    nextState.copy(errorMessage = "解析为空 | $debugResult")
                 } else nextState
             }.onFailure { error ->
                 _uiState.value = currentState.copy(
