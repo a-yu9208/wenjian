@@ -32,7 +32,7 @@ object AppUpdater {
                 val text = conn.inputStream.bufferedReader().readText()
                 conn.disconnect()
                 val json = org.json.JSONObject(text)
-                val data = json.optJSONObject("data") ?: return@Thread mainHandler.post { onResult(null) }
+                val data = json.optJSONObject("data") ?: run { mainHandler.post { onResult(null) }; return@Thread }
                 val info = UpdateInfo(
                     versionCode = data.optInt("versionCode"),
                     versionName = data.optString("versionName"),
