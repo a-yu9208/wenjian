@@ -3,6 +3,7 @@ package com.example.yueyeushaokaojiaoziguan.screens.functions
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,6 +32,20 @@ fun PointsActivityScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // 顶部装饰
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)), shape = RoundedCornerShape(16.dp)) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("🎁", fontSize = 32.sp)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("积分活动", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("管理积分规则与流水", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+
         // 查询积分
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
@@ -173,9 +188,9 @@ fun ProfileScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)), shape = RoundedCornerShape(20.dp)) {
                 Column(
-                    Modifier.fillMaxWidth().padding(24.dp),
+                    Modifier.fillMaxWidth().padding(28.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text("👤", fontSize = 48.sp)

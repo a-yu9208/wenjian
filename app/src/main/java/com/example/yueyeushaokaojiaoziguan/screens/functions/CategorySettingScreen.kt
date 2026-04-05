@@ -3,6 +3,7 @@ package com.example.yueyeushaokaojiaoziguan.screens.functions
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +23,20 @@ fun CategorySettingScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        // 顶部装饰
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF3E5F5)), shape = RoundedCornerShape(16.dp)) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("📂", fontSize = 32.sp)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("分类管理", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("共 ${uiState.categories.size} 个分类", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(

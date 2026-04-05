@@ -3,9 +3,11 @@ package com.example.yueyeushaokaojiaoziguan.screens
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -54,8 +56,12 @@ fun OrderHistoryScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier
     }
 
     Column(modifier.fillMaxSize()) {
-        // 日期快捷筛选
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        // 日期快捷筛选 — 可横向滚动
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             listOf("今日" to 0, "昨日" to 1, "近7天" to 7, "近30天" to 30).forEach { (label, days) ->
                 FilterChip(
                     selected = dateLabel == label,

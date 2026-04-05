@@ -85,6 +85,20 @@ fun TableManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // 顶部装饰
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F7FA)), shape = RoundedCornerShape(16.dp)) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("🪑", fontSize = 32.sp)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("桌台管理", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("共 ${uiState.tables.size} 张桌台", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+
         // 生成桌码
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {

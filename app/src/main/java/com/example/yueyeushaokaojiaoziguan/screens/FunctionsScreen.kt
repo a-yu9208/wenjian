@@ -48,7 +48,7 @@ fun FunctionsScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier: M
         FunctionSubPage(activePage, uiState, vm, { activePageName = null }, modifier)
     } else {
         LazyVerticalGrid(
-            columns = GridCells.Fixed(3), modifier = modifier.fillMaxSize(),
+            columns = GridCells.Fixed(2), modifier = modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -75,21 +75,23 @@ private fun FunctionCard(entry: FunctionEntry, onClick: () -> Unit) {
     val gradient = entryGradients[entry] ?: GradientOrange
 
     Card(
-        modifier = Modifier.aspectRatio(1f).graphicsLayer { scaleX = scale; scaleY = scale }
+        modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = scale; scaleY = scale }
             .shadow(6.dp, RoundedCornerShape(20.dp))
             .clickable(interactionSource = interactionSource, indication = null) { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(20.dp)
     ) {
-        Column(Modifier.fillMaxSize().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            // 渐变圆形图标背景
+        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.size(48.dp).clip(RoundedCornerShape(14.dp))
                     .background(Brush.linearGradient(gradient)),
                 contentAlignment = Alignment.Center
             ) { Text(entry.icon, fontSize = 24.sp) }
-            Spacer(Modifier.height(10.dp))
-            Text(entry.label, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.width(14.dp))
+            Column {
+                Text(entry.label, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(entry.desc, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }

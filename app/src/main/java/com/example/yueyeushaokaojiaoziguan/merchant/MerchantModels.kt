@@ -13,13 +13,13 @@ enum class HomeSubTab(val label: String) {
     AwaitingPayment("待结账")
 }
 
-enum class FunctionEntry(val label: String, val icon: String) {
-    Revenue("营业额统计", "📊"),
-    DishManage("菜品管理", "🍖"),
-    CategorySetting("分类设置", "📂"),
-    TableManage("桌台管理", "🪑"),
-    PointsActivity("积分活动", "🎁"),
-    Profile("个人信息", "👤")
+enum class FunctionEntry(val label: String, val icon: String, val desc: String) {
+    Revenue("营业额统计", "📊", "查看经营数据"),
+    DishManage("菜品管理", "🍖", "增删改菜品"),
+    CategorySetting("分类设置", "📂", "管理菜品分类"),
+    TableManage("桌台管理", "🪑", "桌码与状态"),
+    PointsActivity("积分活动", "🎁", "积分规则与流水"),
+    Profile("个人信息", "👤", "店铺与账号")
 }
 
 data class StatCard(
