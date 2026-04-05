@@ -26,7 +26,7 @@ let cart = {}; // { dishId: { qty, note } }
 let notes = {}; // { dishId: noteText }
 let currentPage = 'welcome';
 let usePoints = false;
-let serverOrderIds = []; // 后端返回的订单ID
+let serverOrderIds = JSON.parse(localStorage.getItem('orderIds') || '[]');
 let pollTimer = null;
 
 // ========== 工具函数 ==========
@@ -205,6 +205,7 @@ async function submitOrder() {
       const json = await res.json();
       if (json.success && json.data) {
         serverOrderIds.push(json.data.orderId);
+        localStorage.setItem('orderIds', JSON.stringify(serverOrderIds));
       }
     } catch (e) { /* 兜底用本地数据 */ }
   }
@@ -218,6 +219,27 @@ async function submitOrder() {
   // 显示菜单页的查看订单按钮
   const fb = document.getElementById('orderFloatBtn');
   if (fb) fb.classList.remove('hidden');
+}
+
+async function restoreOrders() {
+  for (const oid of serverOrderIds) {
+    try {
+      const res = await fetch(`${API_BASE}/customer/order-status?orderId=${oid}`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        const d = json.data;
+        if (!MOCK.orders.find(o => o.serverId === oid)) {
+          MOCK.orders.push({
+            serverId: oid,
+            time: '',
+            dishes: (d.items || []).map(i => ({ name: i.name, qty: i.quantity, note: '', served: false, quick: false })),
+            status: d.status,
+            isAppend: MOCK.orders.length > 0
+          });
+        }
+      }
+    } catch (e) {}
+  }
 }
 
 function startOrderPoll() {
@@ -319,6 +341,9 @@ async function notifyMerchant() {
   }
 
   if (!serverOrderIds.length) showToast('已通知商家，请等待服务员收款');
+  serverOrderIds = [];
+  localStorage.removeItem('orderIds');
+  MOCK.orders = [];
   show('welcome');
   const app = $('#welcome');
   app.innerHTML = `<h1>🔥 ${MOCK.shopName}</h1><div class="sub">${MOCK.table.area} ${MOCK.table.number}号桌</div><div class="sub">等待商家确认收款...</div>`;
@@ -423,11 +448,17 @@ async function init() {
     <div class="page" id="bill"></div>
     <div class="page" id="me"></div>`;
 
-  setTimeout(() => {
+  setTimeout(async () => {
     show('menu');
     renderCatList();
     renderMenu();
     renderCartBar();
+    // 有历史订单则显示查看按钮并恢复数据
+    if (serverOrderIds.length > 0) {
+      const fb = document.getElementById('orderFloatBtn');
+      if (fb) fb.classList.remove('hidden');
+      await restoreOrders();
+    }
     // 滚动时高亮对应分类
     const dishList = $('.dish-list');
     if (dishList) {
