@@ -87,7 +87,12 @@ class MerchantViewModel(
         category: String? = null,
         price: String? = null,
         stock: String? = null,
-        type: String? = null
+        type: String? = null,
+        description: String? = null,
+        minOrder: String? = null,
+        quickServe: Boolean? = null,
+        discountEnabled: Boolean? = null,
+        discountPrice: String? = null
     ) {
         val current = _uiState.value.dishDraft
         _uiState.value = _uiState.value.copy(
@@ -96,7 +101,12 @@ class MerchantViewModel(
                 category = category ?: current.category,
                 price = price ?: current.price,
                 stock = stock ?: current.stock,
-                type = type ?: current.type
+                type = type ?: current.type,
+                description = description ?: current.description,
+                minOrder = minOrder ?: current.minOrder,
+                quickServe = quickServe ?: current.quickServe,
+                discountEnabled = discountEnabled ?: current.discountEnabled,
+                discountPrice = discountPrice ?: current.discountPrice
             )
         )
     }
@@ -185,7 +195,15 @@ class MerchantViewModel(
             price = normalizedPrice,
             stock = stockValue,
             soldToday = 0,
-            type = draft.type
+            type = draft.type,
+            description = draft.description,
+            minOrder = draft.minOrder.toIntOrNull() ?: 1,
+            quickServe = draft.quickServe,
+            discountEnabled = draft.discountEnabled,
+            discountPrice = if (draft.discountEnabled) {
+                val dp = draft.discountPrice.trim()
+                if (dp.startsWith("¥")) dp else "¥$dp"
+            } else ""
         )
 
         _uiState.value = _uiState.value.copy(
@@ -244,6 +262,13 @@ class MerchantViewModel(
                     )
                 }
         }
+    }
+
+    fun deleteTable(label: String) {
+        _uiState.value = _uiState.value.copy(
+            tables = _uiState.value.tables.filterNot { it.label == label },
+            noticeMessage = "已删除 $label"
+        )
     }
 
     fun toggleTableStatus(label: String) {

@@ -127,15 +127,20 @@ fun TableManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                                 .padding(end = 8.dp)
                         )
                     }
-                    FilledTonalButton(onClick = { vm.toggleTableStatus(table.label) }) {
-                        Text(
-                            when (table.status) {
-                                "空闲" -> "使用中"
-                                "使用中" -> "待结账"
-                                "待结账" -> "空闲"
-                                else -> "更新"
-                            }, fontSize = 13.sp
-                        )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        FilledTonalButton(onClick = { vm.toggleTableStatus(table.label) }) {
+                            Text(
+                                when (table.status) {
+                                    "空闲" -> "使用中"
+                                    "使用中" -> "待结账"
+                                    "待结账" -> "空闲"
+                                    else -> "更新"
+                                }, fontSize = 13.sp
+                            )
+                        }
+                        TextButton(onClick = { vm.deleteTable(table.label) }) {
+                            Text("删除", fontSize = 12.sp, color = Color(0xFFD32F2F))
+                        }
                     }
                 }
             }

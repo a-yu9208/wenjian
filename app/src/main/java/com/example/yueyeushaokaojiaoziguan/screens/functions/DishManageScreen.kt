@@ -5,8 +5,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -154,7 +156,10 @@ private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDis
         onDismissRequest = onDismiss,
         title = { Text("新增菜品") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 OutlinedTextField(
                     value = uiState.dishDraft.name,
                     onValueChange = { vm.updateDishDraft(name = it) },
@@ -176,6 +181,21 @@ private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDis
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+                OutlinedTextField(
+                    value = uiState.dishDraft.description,
+                    onValueChange = { vm.updateDishDraft(description = it) },
+                    label = { Text("菜品描述") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = uiState.dishDraft.minOrder,
+                    onValueChange = { vm.updateDishDraft(minOrder = it.filter(Char::isDigit)) },
+                    label = { Text("最低起点数量") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                // 分类选择
                 Text("分类：${uiState.dishDraft.category}", fontSize = 13.sp)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     uiState.categories.forEach { cat ->
@@ -184,6 +204,24 @@ private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDis
                             label = { Text(cat, fontSize = 12.sp) }
                         )
                     }
+                }
+                // 开关
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("可快速上菜", fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    Switch(checked = uiState.dishDraft.quickServe, onCheckedChange = { vm.updateDishDraft(quickServe = it) })
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("启用折扣", fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    Switch(checked = uiState.dishDraft.discountEnabled, onCheckedChange = { vm.updateDishDraft(discountEnabled = it) })
+                }
+                if (uiState.dishDraft.discountEnabled) {
+                    OutlinedTextField(
+                        value = uiState.dishDraft.discountPrice,
+                        onValueChange = { vm.updateDishDraft(discountPrice = it.filter { c -> c.isDigit() || c == '.' }) },
+                        label = { Text("折扣价") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         },

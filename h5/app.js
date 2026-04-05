@@ -146,7 +146,7 @@ function renderCartBar() {
 
 function goConfirm() {
   const wrap = $('#confirm');
-  let html = '<div class="confirm-page">';
+  let html = '<div class="topbar"><button class="me-btn" onclick="show(\'menu\')">← 返回</button><span class="title">确认订单</span><span></span></div><div class="confirm-page">';
   for (const [id, v] of Object.entries(cart)) {
     const d = MOCK.dishes.find(x => x.id == id);
     if (!d) continue;
