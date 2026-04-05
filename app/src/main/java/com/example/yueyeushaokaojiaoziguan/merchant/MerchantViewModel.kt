@@ -242,9 +242,9 @@ class MerchantViewModel(
 
     fun toggleDishServed(tableLabel: String, time: String, dishName: String) {
         _uiState.value = _uiState.value.let { state ->
-            state.copy(orders = state.orders.map { order ->
+            val updatedOrders = state.orders.map { order ->
                 if (order.tableLabel == tableLabel && order.time == time) {
-                    order.copy(dishes = order.dishes.map { dish ->
+                    val updatedDishes = order.dishes.map { dish ->
                         if (dish.subItems.isNotEmpty()) {
                             val updatedSubs = dish.subItems.map { sub ->
                                 if (sub.name == dishName) sub.copy(served = !sub.served) else sub
@@ -253,9 +253,21 @@ class MerchantViewModel(
                         } else {
                             if (dish.name == dishName) dish.copy(served = !dish.served) else dish
                         }
-                    })
+                    }
+                    val allServed = updatedDishes.all { it.served }
+                    val newStatus = if (allServed && order.status in listOf("待处理", "制作中")) "待结账" else order.status
+                    order.copy(dishes = updatedDishes, status = newStatus)
                 } else order
-            })
+            }
+            // 同步状态变更到后端
+            val changed = updatedOrders.firstOrNull { it.tableLabel == tableLabel && it.time == time }
+            val original = state.orders.firstOrNull { it.tableLabel == tableLabel && it.time == time }
+            if (changed != null && original != null && changed.status != original.status && changed.id > 0) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    runCatching { repository.pushOrderStatus(changed.id.toString(), changed.status) }
+                }
+            }
+            state.copy(orders = updatedOrders)
         }
     }
 
