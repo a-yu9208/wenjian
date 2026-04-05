@@ -13,4 +13,6 @@ interface MerchantRepository {
     suspend fun deleteDishes(names: Set<String>)
     suspend fun pushTableStatus(label: String, status: String)
     suspend fun deleteTable(label: String)
+    suspend fun updateDish(dish: DishItem)
+    suspend fun batchUpdateCategory(names: Set<String>, category: String)
 }

@@ -53,4 +53,12 @@ class CloudBackedMerchantRepository(
     override suspend fun deleteTable(label: String) {
         bridge.deleteTable(label)
     }
+
+    override suspend fun updateDish(dish: DishItem) {
+        bridge.updateDish(dish)
+    }
+
+    override suspend fun batchUpdateCategory(names: Set<String>, category: String) {
+        bridge.batchUpdateCategory(names, category)
+    }
 }

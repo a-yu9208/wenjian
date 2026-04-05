@@ -19,12 +19,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantUiState
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantViewModel
+import com.example.yueyeushaokaojiaoziguan.merchant.DishItem
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
     var manageMode by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(setOf<String>()) }
+    var editingDish by remember { mutableStateOf<DishItem?>(null) }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -51,7 +53,8 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                 items(uiState.dishes, key = { it.name }) { dish ->
                     Card(
                         colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(1.dp)
+                        elevation = CardDefaults.cardElevation(1.dp),
+                        modifier = Modifier.clickable(enabled = !manageMode) { editingDish = dish }
                     ) {
                         Row(
                             Modifier.fillMaxWidth().padding(12.dp),
@@ -134,6 +137,11 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
         // 添加菜品弹窗
         if (uiState.showAddDishDialog) {
             AddDishDialog(uiState = uiState, vm = vm, onDismiss = { vm.hideAddDishDialog() })
+        }
+
+        // 编辑菜品弹窗
+        editingDish?.let { dish ->
+            EditDishDialog(dish = dish, uiState = uiState, vm = vm, onDismiss = { editingDish = null })
         }
     }
 }
@@ -219,5 +227,60 @@ private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDis
         dismissButton = {
             TextButton(onClick = { vm.hideAddDishDialog() }) { Text("取消") }
         }
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun EditDishDialog(dish: DishItem, uiState: MerchantUiState, vm: MerchantViewModel, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf(dish.name) }
+    var price by remember { mutableStateOf(dish.price.replace("¥", "")) }
+    var stock by remember { mutableStateOf(dish.stock.toString()) }
+    var desc by remember { mutableStateOf(dish.description) }
+    var minOrder by remember { mutableStateOf(dish.minOrder.toString()) }
+    var category by remember { mutableStateOf(dish.category) }
+    var quickServe by remember { mutableStateOf(dish.quickServe) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("编辑菜品") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("菜品名称") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = price, onValueChange = { price = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("价格") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = stock, onValueChange = { stock = it.filter(Char::isDigit) }, label = { Text("库存") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = desc, onValueChange = { desc = it }, label = { Text("描述") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = minOrder, onValueChange = { minOrder = it.filter(Char::isDigit) }, label = { Text("最低起点") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                Text("分类：$category", fontSize = 13.sp)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    uiState.categories.forEach { cat ->
+                        AssistChip(onClick = { category = cat }, label = { Text(cat, fontSize = 12.sp) })
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("可快速上菜", fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    Switch(checked = quickServe, onCheckedChange = { quickServe = it })
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val updated = dish.copy(
+                    name = name.trim(),
+                    price = "¥$price",
+                    stock = stock.toIntOrNull() ?: dish.stock,
+                    description = desc,
+                    minOrder = minOrder.toIntOrNull() ?: 1,
+                    category = category,
+                    quickServe = quickServe
+                )
+                vm.updateDish(dish, updated)
+                onDismiss()
+            }) { Text("保存") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
     )
 }

@@ -229,6 +229,29 @@ class MerchantViewModel(
         }
     }
 
+    fun updateDish(original: DishItem, updated: DishItem) {
+        _uiState.value = _uiState.value.copy(
+            dishes = _uiState.value.dishes.map { if (it.name == original.name) updated else it },
+            noticeMessage = "已更新 ${updated.name}"
+        )
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { repository.updateDish(updated) }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(errorMessage = "同步后端失败：${it.message}")
+                }
+        }
+    }
+
+    fun batchUpdateCategory(names: Set<String>, category: String) {
+        _uiState.value = _uiState.value.copy(
+            dishes = _uiState.value.dishes.map { if (it.name in names) it.copy(category = category) else it },
+            noticeMessage = "已将 ${names.size} 道菜品移至 $category"
+        )
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { repository.batchUpdateCategory(names, category) }
+        }
+    }
+
     fun addDishFromDraft(): Boolean {
         val draft = _uiState.value.dishDraft
         val priceValue = draft.price.trim()

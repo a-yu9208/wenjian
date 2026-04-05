@@ -42,7 +42,10 @@ object MerchantJsonParsers {
                         price = item.optString("price"),
                         stock = item.optInt("stock"),
                         soldToday = item.optInt("soldToday"),
-                        type = item.optString("type")
+                        type = item.optString("type"),
+                        quickServe = item.optBoolean("quickServe", false),
+                        description = item.optString("description"),
+                        minOrder = item.optInt("minOrder", 1)
                     )
                 )
             }

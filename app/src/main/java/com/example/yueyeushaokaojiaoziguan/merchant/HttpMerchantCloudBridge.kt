@@ -117,7 +117,7 @@ class HttpMerchantCloudBridge(
 
     override suspend fun createDish(dish: DishItem) {
         val price = dish.price.replace("¥", "").toDoubleOrNull() ?: 0.0
-        val requestBody = """{"name":"${dish.name}","category":"${dish.category}","price":$price,"stock":${dish.stock},"type":"${dish.type}","description":"${dish.description}","minOrder":${dish.minOrder}}"""
+        val requestBody = """{"name":"${dish.name}","category":"${dish.category}","price":$price,"stock":${dish.stock},"type":"${dish.type}","description":"${dish.description}","minOrder":${dish.minOrder},"quickServe":${dish.quickServe}}"""
         httpClient.post("/merchant/dishes", requestBody)
     }
 
@@ -133,5 +133,16 @@ class HttpMerchantCloudBridge(
 
     override suspend fun deleteTable(label: String) {
         httpClient.delete("/merchant/tables/$label")
+    }
+
+    override suspend fun updateDish(dish: DishItem) {
+        val price = dish.price.replace("¥", "").toDoubleOrNull() ?: 0.0
+        val requestBody = """{"name":"${dish.name}","category":"${dish.category}","price":$price,"stock":${dish.stock},"type":"${dish.type}","description":"${dish.description}","minOrder":${dish.minOrder},"quickServe":${dish.quickServe}}"""
+        httpClient.post("/merchant/dishes/update", requestBody)
+    }
+
+    override suspend fun batchUpdateCategory(names: Set<String>, category: String) {
+        val namesJson = names.joinToString(",") { "\"$it\"" }
+        httpClient.post("/merchant/dishes/batch-category", """{"names":[$namesJson],"category":"$category"}""")
     }
 }

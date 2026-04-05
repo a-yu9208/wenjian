@@ -36,4 +36,6 @@ class MockMerchantCloudBridge : MerchantCloudBridge {
 
     override suspend fun pushTableStatus(label: String, status: String) = Unit
     override suspend fun deleteTable(label: String) = Unit
+    override suspend fun updateDish(dish: DishItem) = Unit
+    override suspend fun batchUpdateCategory(names: Set<String>, category: String) = Unit
 }
