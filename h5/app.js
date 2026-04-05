@@ -423,6 +423,23 @@ async function fetchTableInfo(section, number) {
 }
 
 // ========== 初始化 ==========
+async function fetchDishes() {
+  try {
+    const res = await fetch(`${API_BASE}/customer/dishes`);
+    const json = await res.json();
+    if (json.success && json.data) {
+      if (json.data.categories && json.data.categories.length) MOCK.categories = json.data.categories;
+      if (json.data.dishes && json.data.dishes.length) {
+        MOCK.dishes = json.data.dishes.map(d => ({
+          id: d.id, name: d.name, cat: d.category, price: d.price,
+          img: d.imageUrl || '', desc: d.description || '',
+          stock: d.stock, min: d.minOrderQty || 1, quick: false, discount: 0
+        }));
+      }
+    }
+  } catch (e) { console.error('fetchDishes error:', e); }
+}
+
 async function init() {
   const params = new URLSearchParams(location.search);
   const section = params.get('section') || 'outside';
@@ -432,6 +449,7 @@ async function init() {
 
   // 尝试从后端获取店名和桌台信息
   await fetchTableInfo(section, number);
+  await fetchDishes();
 
   // 生成或读取匿名用户ID
   let anonId = localStorage.getItem('anonId');
