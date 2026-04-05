@@ -51,7 +51,8 @@ button{border:none;cursor:pointer;font:inherit}
 
 .order-page{padding:16px;overflow-y:auto;flex:1}
 .order-section{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:12px}
-.order-section .label{font-size:13px;color:var(--text2);margin-bottom:8px}
+.order-section .label{font-size:13px;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.order-status-badge{font-size:12px;padding:2px 8px;border-radius:10px;background:var(--cream);color:var(--brand);font-weight:600}
 .order-dish{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f5}
 .order-dish:last-child{border:none}.order-dish .served{color:var(--green)}.order-dish .cooking{color:var(--brand)}
 .order-actions{display:flex;gap:10px;padding:16px 0}

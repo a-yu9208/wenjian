@@ -26,6 +26,8 @@ let cart = {}; // { dishId: { qty, note } }
 let notes = {}; // { dishId: noteText }
 let currentPage = 'welcome';
 let usePoints = false;
+let serverOrderIds = []; // 后端返回的订单ID
+let pollTimer = null;
 
 // ========== 工具函数 ==========
 const $ = s => document.querySelector(s);
@@ -173,26 +175,63 @@ function goConfirm() {
   show('confirm');
 }
 
-function submitOrder() {
+async function submitOrder() {
+  // 找到当前桌台ID
   const dishes = [];
+  const apiItems = [];
   for (const [id, v] of Object.entries(cart)) {
     const d = MOCK.dishes.find(x => x.id == id);
     if (!d) continue;
     dishes.push({ name: d.name, qty: v.qty, note: notes[id] || '', served: false, quick: d.quick });
+    apiItems.push({ dishId: d.id, quantity: v.qty });
     d.stock = Math.max(0, d.stock - v.qty);
   }
   const isAppend = MOCK.orders.length > 0;
   MOCK.orders.push({
     time: new Date().toTimeString().slice(0, 5),
     dishes,
-    status: '待处理',
+    status: '等待中',
     isAppend
   });
+
+  // 尝试提交到后端
+  if (MOCK.tableId) {
+    try {
+      const res = await fetch(`${API_BASE}/customer/order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableId: MOCK.tableId, items: apiItems })
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        serverOrderIds.push(json.data.orderId);
+      }
+    } catch (e) { /* 兜底用本地数据 */ }
+  }
+
   cart = {};
   notes = {};
   renderOrderPage();
   show('order');
   showToast('下单成功！');
+  startOrderPoll();
+}
+
+function startOrderPoll() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    if (currentPage !== 'order') return;
+    for (let i = 0; i < serverOrderIds.length; i++) {
+      try {
+        const res = await fetch(`${API_BASE}/customer/order-status?orderId=${serverOrderIds[i]}`);
+        const json = await res.json();
+        if (json.success && json.data && MOCK.orders[i]) {
+          MOCK.orders[i].status = json.data.status;
+        }
+      } catch (e) {}
+    }
+    renderOrderPage();
+  }, 5000);
 }
 
 function renderOrderPage() {
@@ -201,11 +240,12 @@ function renderOrderPage() {
     MOCK.table.area + '-' + MOCK.table.number + '号桌</span></div><div class="order-page">';
   MOCK.orders.forEach((o, i) => {
     const label = o.isAppend ? `追加单 ${o.time}` : `第${i + 1}单 ${o.time}`;
-    html += `<div class="order-section"><div class="label">${label}</div>`;
+    const statusBadge = `<span class="order-status-badge">${o.status}</span>`;
+    html += `<div class="order-section"><div class="label">${label} ${statusBadge}</div>`;
     o.dishes.forEach(d => {
+      const statusText = d.served ? '已上菜' : (o.status === '制作中' ? '制作中' : o.status === '等待中' ? '等待中' : '制作中');
       const cls = d.served ? 'served' : 'cooking';
-      const txt = d.served ? '已上菜' : '制作中';
-      html += `<div class="order-dish"><span>${d.name} x${d.qty}${d.note ? ' ('+d.note+')' : ''}</span><span class="${cls}">${txt}</span></div>`;
+      html += `<div class="order-dish"><span>${d.name} x${d.qty}${d.note ? ' ('+d.note+')' : ''}</span><span class="${cls}">${statusText}</span></div>`;
     });
     html += '</div>';
   });
@@ -284,6 +324,7 @@ async function fetchTableInfo(section, number) {
     if (json.success && json.data) {
       if (json.data.shopName) MOCK.shopName = json.data.shopName;
       if (json.data.table) {
+        MOCK.tableId = json.data.table.id;
         MOCK.table.area = { outside:'室外', first:'一楼', second:'二楼' }[json.data.table.section] || json.data.table.section;
         MOCK.table.number = String(json.data.table.number);
       }
