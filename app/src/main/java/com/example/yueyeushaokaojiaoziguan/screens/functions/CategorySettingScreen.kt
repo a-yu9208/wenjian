@@ -18,131 +18,98 @@ import com.example.yueyeushaokaojiaoziguan.merchant.MerchantViewModel
 @Composable
 fun CategorySettingScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
     var batchTarget by remember { mutableStateOf<String?>(null) }
+    var keyword by remember { mutableStateOf("") }
+
+    val filtered = remember(uiState.categories, keyword) {
+        if (keyword.isBlank()) uiState.categories
+        else uiState.categories.filter { it.contains(keyword, true) }
+    }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // 顶部装饰
+        // 装饰头部
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF3E5F5)), shape = RoundedCornerShape(16.dp)) {
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("📂", fontSize = 32.sp)
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text("分类管理", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("共 ${uiState.categories.size} 个分类", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    Text("📂", fontSize = 32.sp); Spacer(Modifier.width(12.dp))
+                    Column { Text("分类管理", fontWeight = FontWeight.Bold, fontSize = 16.sp); Text("共 ${uiState.categories.size} 个分类", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
             }
         }
-
+        // 搜索
+        item {
+            OutlinedTextField(value = keyword, onValueChange = { keyword = it },
+                modifier = Modifier.fillMaxWidth(), label = { Text("搜索分类") }, singleLine = true, shape = RoundedCornerShape(12.dp))
+        }
+        // 添加分类
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = uiState.categoryDraft,
-                    onValueChange = vm::updateCategoryDraft,
-                    modifier = Modifier.weight(1f),
-                    label = { Text("新分类名称") },
-                    singleLine = true
-                )
-                FilledTonalButton(
-                    onClick = vm::addCategoryFromDraft,
-                    modifier = Modifier.align(Alignment.CenterVertically)
-                ) { Text("添加") }
+                OutlinedTextField(value = uiState.categoryDraft, onValueChange = vm::updateCategoryDraft,
+                    modifier = Modifier.weight(1f), label = { Text("新分类名称") }, singleLine = true, shape = RoundedCornerShape(12.dp))
+                FilledTonalButton(onClick = vm::addCategoryFromDraft, modifier = Modifier.align(Alignment.CenterVertically)) { Text("添加") }
             }
         }
-
-        items(uiState.categories) { category ->
-            Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+        // 分类列表
+        items(filtered) { category ->
+            Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp)) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
                         Text(category, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "${uiState.dishes.count { it.category == category }} 道菜",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text("${uiState.dishes.count { it.category == category }} 道菜", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         IconButton(onClick = { vm.moveCategoryUp(category) }) { Text("↑") }
                         IconButton(onClick = { vm.moveCategoryDown(category) }) { Text("↓") }
-                        TextButton(onClick = { batchTarget = category }) {
-                            Text("添加菜品")
-                        }
-                        TextButton(onClick = { vm.removeCategory(category) }) {
-                            Text("删除", color = Color(0xFFD32F2F))
-                        }
+                        TextButton(onClick = { batchTarget = category }) { Text("添加菜品") }
+                        TextButton(onClick = { vm.removeCategory(category) }) { Text("删除", color = Color(0xFFD32F2F)) }
                     }
                 }
             }
         }
     }
 
-    // 批量添加菜品到分类弹窗
     batchTarget?.let { target ->
-        BatchAddToCategoryDialog(
-            category = target,
-            uiState = uiState,
-            onConfirm = { names ->
-                vm.batchUpdateCategory(names, target)
-                batchTarget = null
-            },
-            onDismiss = { batchTarget = null }
-        )
+        BatchAddToCategoryDialog(category = target, uiState = uiState,
+            onConfirm = { names -> vm.batchUpdateCategory(names, target); batchTarget = null },
+            onDismiss = { batchTarget = null })
     }
 }
 
 @Composable
-private fun BatchAddToCategoryDialog(
-    category: String,
-    uiState: MerchantUiState,
-    onConfirm: (Set<String>) -> Unit,
-    onDismiss: () -> Unit
-) {
-    // 显示不在该分类下的菜品供选择
+private fun BatchAddToCategoryDialog(category: String, uiState: MerchantUiState, onConfirm: (Set<String>) -> Unit, onDismiss: () -> Unit) {
     val candidates = uiState.dishes.filter { it.category != category }
     var selected by remember { mutableStateOf(setOf<String>()) }
+    var searchText by remember { mutableStateOf("") }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("添加菜品到「$category」") },
+    val filtered = remember(candidates, searchText) {
+        if (searchText.isBlank()) candidates
+        else candidates.filter { it.name.contains(searchText, true) || it.category.contains(searchText, true) }
+    }
+
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("添加菜品到「$category」") },
         text = {
-            if (candidates.isEmpty()) {
-                Text("没有其他分类的菜品可添加", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                    items(candidates, key = { it.name }) { dish ->
-                        Row(
-                            Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(
-                                checked = dish.name in selected,
-                                onCheckedChange = {
-                                    selected = if (it) selected + dish.name else selected - dish.name
-                                }
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Column {
-                                Text(dish.name, fontSize = 15.sp)
-                                Text("当前分类：${dish.category}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column {
+                OutlinedTextField(value = searchText, onValueChange = { searchText = it },
+                    modifier = Modifier.fillMaxWidth(), label = { Text("搜索菜品") }, singleLine = true, shape = RoundedCornerShape(12.dp))
+                Spacer(Modifier.height(8.dp))
+                if (filtered.isEmpty()) {
+                    Text("没有匹配的菜品", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                        items(filtered, key = { it.name }) { dish ->
+                            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(checked = dish.name in selected, onCheckedChange = { selected = if (it) selected + dish.name else selected - dish.name })
+                                Spacer(Modifier.width(8.dp))
+                                Column { Text(dish.name, fontSize = 15.sp); Text("当前分类：${dish.category}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                             }
                         }
                     }
                 }
             }
         },
-        confirmButton = {
-            TextButton(
-                onClick = { if (selected.isNotEmpty()) onConfirm(selected) },
-                enabled = selected.isNotEmpty()
-            ) { Text("确认移入 (${selected.size})") }
-        },
+        confirmButton = { TextButton(onClick = { if (selected.isNotEmpty()) onConfirm(selected) }, enabled = selected.isNotEmpty()) { Text("确认移入 (${selected.size})") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
     )
 }

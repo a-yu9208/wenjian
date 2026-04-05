@@ -38,133 +38,112 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
     var manageMode by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(setOf<String>()) }
     var editingDish by remember { mutableStateOf<DishItem?>(null) }
+    var keyword by remember { mutableStateOf("") }
+
+    val allDishes = uiState.dishes.filter { keyword.isBlank() || it.name.contains(keyword, true) || it.category.contains(keyword, true) }
+    val urgentDishes = allDishes.filter { it.type != "套餐" && it.stock < 20 }
+    val normalDishes = allDishes.filter { it.type == "套餐" || it.stock >= 20 }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
+            // 搜索栏
+            OutlinedTextField(
+                value = keyword, onValueChange = { keyword = it },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                label = { Text("搜索菜品名称或分类") }, singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
             // 顶部操作栏
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("共 ${uiState.dishes.size} 道菜品", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(onClick = {
-                    manageMode = !manageMode
-                    if (!manageMode) selected = emptySet()
-                }) {
+                Text("共 ${allDishes.size} 道菜品", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = { manageMode = !manageMode; if (!manageMode) selected = emptySet() }) {
                     Text(if (manageMode) "取消" else "管理")
                 }
             }
 
-            // 菜品列表
             LazyColumn(
                 contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(uiState.dishes, key = { _, it -> it.name }) { index, dish ->
-                    val visible = remember { mutableStateOf(false) }
-                    LaunchedEffect(Unit) { visible.value = true }
-                    AnimatedVisibility(
-                        visible.value,
-                        enter = slideInHorizontally(tween(300, delayMillis = index * 40)) { it / 3 } + fadeIn(tween(300, delayMillis = index * 40))
-                    ) {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.shadow(3.dp, RoundedCornerShape(16.dp)).clickable(enabled = !manageMode) { editingDish = dish }
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (manageMode) {
-                                Checkbox(
-                                    checked = dish.name in selected,
-                                    onCheckedChange = {
-                                        selected = if (it) selected + dish.name else selected - dish.name
-                                    }
-                                )
+                // 紧急补货区
+                if (urgentDishes.isNotEmpty()) {
+                    item {
+                        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)), shape = RoundedCornerShape(12.dp)) {
+                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("🚨", fontSize = 20.sp)
                                 Spacer(Modifier.width(8.dp))
-                            }
-
-                            // 图片
-                            Box(
-                                Modifier.size(56.dp).clip(RoundedCornerShape(8.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (dish.imageUri.isNotBlank()) {
-                                    val imgUrl = if (dish.imageUri.startsWith("http")) dish.imageUri else "${MerchantApiConfig.baseApiUrl}${dish.imageUri}"
-                                    AsyncImage(model = imgUrl, contentDescription = dish.name, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                                } else {
-                                    Text("🍖", fontSize = 24.sp)
-                                }
-                            }
-
-                            Spacer(Modifier.width(12.dp))
-
-                            Column(Modifier.weight(1f)) {
-                                Text(dish.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                                Text(
-                                    "${dish.category} · 库存${dish.stock}",
-                                    fontSize = 13.sp,
-                                    color = if (dish.stock <= 10) Color(0xFFD32F2F) else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                if (dish.discountEnabled && dish.discountPrice.isNotBlank()) {
-                                    Row {
-                                        Text(dish.price, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(dish.discountPrice, fontSize = 13.sp, color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold)
-                                    }
-                                } else {
-                                    Text(dish.price, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                                }
-                            }
-
-                            // 库存快捷调整
-                            if (!manageMode) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    IconButton(onClick = { vm.updateDishStock(dish.name, -1) }, Modifier.size(32.dp)) {
-                                        Text("−", fontSize = 18.sp)
-                                    }
-                                    Text("${dish.stock}", Modifier.width(30.dp), fontSize = 14.sp,
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                                    IconButton(onClick = { vm.updateDishStock(dish.name, 1) }, Modifier.size(32.dp)) {
-                                        Text("+", fontSize = 18.sp)
-                                    }
-                                }
+                                Text("紧急补货 (${urgentDishes.size})", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFFD32F2F))
                             }
                         }
                     }
-                    } // AnimatedVisibility
+                    itemsIndexed(urgentDishes, key = { _, it -> "u_${it.name}" }) { _, dish ->
+                        DishCard(dish, manageMode, dish.name in selected, { selected = if (it) selected + dish.name else selected - dish.name }, { editingDish = dish }, vm)
+                    }
+                    item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
+                }
+                // 正常区域
+                if (normalDishes.isNotEmpty()) {
+                    item {
+                        Text("全部菜品", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 4.dp))
+                    }
+                    itemsIndexed(normalDishes, key = { _, it -> "n_${it.name}" }) { _, dish ->
+                        DishCard(dish, manageMode, dish.name in selected, { selected = if (it) selected + dish.name else selected - dish.name }, { editingDish = dish }, vm)
+                    }
                 }
             }
         }
 
-        // 管理模式下的删除按钮
         if (manageMode && selected.isNotEmpty()) {
             Button(
-                onClick = {
-                    vm.deleteDishes(selected)
-                    selected = emptySet()
-                    manageMode = false
-                },
+                onClick = { vm.deleteDishes(selected); selected = emptySet(); manageMode = false },
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
-            ) {
-                Text("删除选中 (${selected.size})", color = Color.White)
+            ) { Text("删除选中 (${selected.size})", color = Color.White) }
+        }
+
+        if (uiState.showAddDishDialog) { AddDishDialog(uiState = uiState, vm = vm, onDismiss = { vm.hideAddDishDialog() }) }
+        editingDish?.let { dish -> EditDishDialog(dish = dish, uiState = uiState, vm = vm, onDismiss = { editingDish = null }) }
+    }
+}
+
+@Composable
+private fun DishCard(dish: DishItem, manageMode: Boolean, checked: Boolean, onCheck: (Boolean) -> Unit, onClick: () -> Unit, vm: MerchantViewModel) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.shadow(3.dp, RoundedCornerShape(16.dp)).clickable(enabled = !manageMode) { onClick() }
+    ) {
+        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (manageMode) { Checkbox(checked = checked, onCheckedChange = onCheck); Spacer(Modifier.width(8.dp)) }
+            Box(Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                if (dish.imageUri.isNotBlank()) {
+                    val imgUrl = if (dish.imageUri.startsWith("http")) dish.imageUri else "${MerchantApiConfig.baseApiUrl}${dish.imageUri}"
+                    AsyncImage(model = imgUrl, contentDescription = dish.name, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                } else { Text("🍖", fontSize = 24.sp) }
             }
-        }
-
-        // 添加菜品弹窗
-        if (uiState.showAddDishDialog) {
-            AddDishDialog(uiState = uiState, vm = vm, onDismiss = { vm.hideAddDishDialog() })
-        }
-
-        // 编辑菜品弹窗
-        editingDish?.let { dish ->
-            EditDishDialog(dish = dish, uiState = uiState, vm = vm, onDismiss = { editingDish = null })
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(dish.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                Text("${dish.category} · 库存${dish.stock}", fontSize = 13.sp, color = if (dish.stock < 20) Color(0xFFD32F2F) else MaterialTheme.colorScheme.onSurfaceVariant)
+                if (dish.discountEnabled && dish.discountPrice.isNotBlank()) {
+                    Row {
+                        Text(dish.price, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
+                        Spacer(Modifier.width(4.dp))
+                        Text(dish.discountPrice, fontSize = 13.sp, color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold)
+                    }
+                } else { Text(dish.price, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
+            }
+            if (!manageMode) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { vm.updateDishStock(dish.name, -1) }, Modifier.size(32.dp)) { Text("−", fontSize = 18.sp) }
+                    Text("${dish.stock}", Modifier.width(30.dp), fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    IconButton(onClick = { vm.updateDishStock(dish.name, 1) }, Modifier.size(32.dp)) { Text("+", fontSize = 18.sp) }
+                }
+            }
         }
     }
 }
