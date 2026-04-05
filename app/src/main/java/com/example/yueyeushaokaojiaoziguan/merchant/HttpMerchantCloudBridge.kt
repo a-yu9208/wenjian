@@ -7,29 +7,65 @@ class HttpMerchantCloudBridge(
 
     override suspend fun fetchDashboardStats(): List<StatCard> {
         return when (val result = httpClient.get(MerchantApiConfig.dashboardPath)) {
-            is MerchantApiResult.Success -> MerchantJsonParsers.parseDashboardStats(result.data)
-            is MerchantApiResult.Error -> emptyList()
+            is MerchantApiResult.Success -> {
+                val parsed = MerchantJsonParsers.parseDashboardStats(result.data)
+                if (parsed.isEmpty()) {
+                    android.util.Log.e("SHAOKAO", "dashboard raw: ${result.data.take(200)}")
+                }
+                parsed
+            }
+            is MerchantApiResult.Error -> {
+                android.util.Log.e("SHAOKAO", "dashboard error: ${result.message}")
+                emptyList()
+            }
         }
     }
 
     override suspend fun fetchDishes(): List<DishItem> {
         return when (val result = httpClient.get(MerchantApiConfig.dishesPath)) {
-            is MerchantApiResult.Success -> MerchantJsonParsers.parseDishes(result.data)
-            is MerchantApiResult.Error -> emptyList()
+            is MerchantApiResult.Success -> {
+                val parsed = MerchantJsonParsers.parseDishes(result.data)
+                if (parsed.isEmpty()) {
+                    android.util.Log.e("SHAOKAO", "dishes raw: ${result.data.take(200)}")
+                }
+                parsed
+            }
+            is MerchantApiResult.Error -> {
+                android.util.Log.e("SHAOKAO", "dishes error: ${result.message}")
+                emptyList()
+            }
         }
     }
 
     override suspend fun fetchOrders(): List<OrderItem> {
         return when (val result = httpClient.get(MerchantApiConfig.ordersPath)) {
-            is MerchantApiResult.Success -> MerchantJsonParsers.parseOrders(result.data)
-            is MerchantApiResult.Error -> emptyList()
+            is MerchantApiResult.Success -> {
+                val parsed = MerchantJsonParsers.parseOrders(result.data)
+                if (parsed.isEmpty()) {
+                    android.util.Log.e("SHAOKAO", "orders raw: ${result.data.take(200)}")
+                }
+                parsed
+            }
+            is MerchantApiResult.Error -> {
+                android.util.Log.e("SHAOKAO", "orders error: ${result.message}")
+                emptyList()
+            }
         }
     }
 
     override suspend fun fetchTables(): List<TableItem> {
         return when (val result = httpClient.get(MerchantApiConfig.tablesPath)) {
-            is MerchantApiResult.Success -> MerchantJsonParsers.parseTables(result.data)
-            is MerchantApiResult.Error -> emptyList()
+            is MerchantApiResult.Success -> {
+                val parsed = MerchantJsonParsers.parseTables(result.data)
+                if (parsed.isEmpty()) {
+                    android.util.Log.e("SHAOKAO", "tables raw: ${result.data.take(200)}")
+                }
+                parsed
+            }
+            is MerchantApiResult.Error -> {
+                android.util.Log.e("SHAOKAO", "tables error: ${result.message}")
+                emptyList()
+            }
         }
     }
 

@@ -474,7 +474,7 @@ class MerchantViewModel(
                 val allEmpty = nextState.dashboardStats.isEmpty() && nextState.dishes.isEmpty()
                         && nextState.orders.isEmpty() && nextState.tables.isEmpty()
                 _uiState.value = if (allEmpty) {
-                    nextState.copy(errorMessage = "数据为空，请检查网络是否能访问 ${MerchantApiConfig.baseApiUrl}")
+                    nextState.copy(errorMessage = "接口返回数据解析为空，请查看Logcat标签SHAOKAO")
                 } else nextState
             }.onFailure { error ->
                 _uiState.value = currentState.copy(
