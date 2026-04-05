@@ -215,6 +215,9 @@ async function submitOrder() {
   show('order');
   showToast('下单成功！');
   startOrderPoll();
+  // 显示菜单页的查看订单按钮
+  const fb = document.getElementById('orderFloatBtn');
+  if (fb) fb.classList.remove('hidden');
 }
 
 function startOrderPoll() {
@@ -302,16 +305,25 @@ function notifyMerchant() {
 function goMe() {
   const wrap = $('#me');
   const u = MOCK.user;
+  const hasOrders = MOCK.orders.length > 0 || serverOrderIds.length > 0;
   wrap.innerHTML = `<div class="topbar"><button class="me-btn" onclick="show('menu')">← 返回</button><span class="title">我的</span><span></span></div>
   <div class="me-page">
-    <div class="me-header"><div class="me-avatar">👤</div><div class="me-name">${u.name}</div><div class="me-points">积分：${u.points}</div></div>
-    <div class="me-section"><h3>积分明细</h3>
-      <div class="me-row"><span>消费获得</span><span>+100</span></div>
-      <div class="me-row"><span>抵扣使用</span><span>-30</span></div>
-      <div class="me-row"><span>商家赠送</span><span>+50</span></div>
-    </div>
+    <div class="me-header"><div class="me-avatar">${u.avatar ? `<img src="${u.avatar}" style="width:64px;height:64px;border-radius:50%">` : '👤'}</div><div class="me-name">${u.name}</div><div class="me-points">积分：${u.points}</div></div>
+    ${hasOrders ? '<div class="me-action"><button class="btn-primary" onclick="renderOrderPage();show(\'order\');startOrderPoll()">查看本桌订单</button></div>' : ''}
+    <div class="me-section"><h3>积分明细</h3><div id="points-log">加载中...</div></div>
   </div>`;
   show('me');
+  loadPointsLog();
+}
+
+async function loadPointsLog() {
+  const el = document.getElementById('points-log');
+  if (!el) return;
+  // 目前后端没有积分接口，显示本地数据
+  el.innerHTML = `
+    <div class="me-row"><span>消费获得</span><span>+100</span></div>
+    <div class="me-row"><span>抵扣使用</span><span>-30</span></div>
+    <div class="me-row"><span>商家赠送</span><span>+50</span></div>`;
 }
 
 // ========== API ==========
@@ -343,6 +355,11 @@ async function init() {
   // 尝试从后端获取店名和桌台信息
   await fetchTableInfo(section, number);
 
+  // 生成或读取匿名用户ID
+  let anonId = localStorage.getItem('anonId');
+  if (!anonId) { anonId = 'guest_' + Date.now(); localStorage.setItem('anonId', anonId); }
+  MOCK.user.anonId = anonId;
+
   const app = $('#app');
   app.innerHTML = `
     <div class="page welcome active" id="welcome">
@@ -356,6 +373,7 @@ async function init() {
         <button class="me-btn" onclick="goMe()">我的</button>
       </div>
       <div class="menu-wrap"><div class="cat-list"></div><div class="dish-list"></div></div>
+      <div class="order-float-btn hidden" id="orderFloatBtn" onclick="renderOrderPage();show('order');startOrderPoll()">📋 查看订单</div>
       <div class="cart-bar hidden"></div>
     </div>
     <div class="page" id="confirm"></div>
