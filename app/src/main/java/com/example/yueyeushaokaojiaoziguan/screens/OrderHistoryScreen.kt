@@ -69,9 +69,11 @@ fun OrderHistoryScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier
                         dateLabel = label
                         val c = Calendar.getInstance()
                         val end = fmt.format(c.time)
-                        if (days == 1) { c.add(Calendar.DAY_OF_YEAR, -1); val d = fmt.format(c.time); vm.queryOrdersByDate(d, d) { dateOrders = it } }
-                        else if (days > 1) { c.add(Calendar.DAY_OF_YEAR, -days + 1); vm.queryOrdersByDate(fmt.format(c.time), end) { dateOrders = it } }
-                        else dateOrders = null
+                        if (days == 0) {
+                            val today = fmt.format(c.time)
+                            vm.queryOrdersByDate(today, today) { dateOrders = it }
+                        } else if (days == 1) { c.add(Calendar.DAY_OF_YEAR, -1); val d = fmt.format(c.time); vm.queryOrdersByDate(d, d) { dateOrders = it } }
+                        else { c.add(Calendar.DAY_OF_YEAR, -days + 1); vm.queryOrdersByDate(fmt.format(c.time), end) { dateOrders = it } }
                     },
                     label = { Text(label, fontSize = 12.sp) },
                     shape = RoundedCornerShape(20.dp)
