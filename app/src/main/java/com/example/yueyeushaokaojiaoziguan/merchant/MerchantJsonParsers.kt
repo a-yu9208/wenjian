@@ -59,6 +59,11 @@ object MerchantJsonParsers {
         return buildList {
             for (index in 0 until ordersArray.length()) {
                 val item = ordersArray.optJSONObject(index) ?: continue
+                var dishes = parseOrderDishes(item.optJSONArray("dishes"))
+                // 后端可能不返回 dishes，从 summary 解析
+                if (dishes.isEmpty()) {
+                    dishes = parseSummaryToDishes(item.optString("summary"))
+                }
                 add(
                     OrderItem(
                         id = item.optInt("id"),
@@ -70,11 +75,23 @@ object MerchantJsonParsers {
                         area = item.optString("area"),
                         isAppend = item.optBoolean("isAppend", false),
                         appendIndex = item.optInt("appendIndex", 0),
-                        dishes = parseOrderDishes(item.optJSONArray("dishes")),
+                        dishes = dishes,
                         utensilCount = item.optInt("utensilCount", 0)
                     )
                 )
             }
+        }
+    }
+
+    /** 从 "花生米 x1、酸梅汤 x2" 格式的 summary 解析出菜品列表 */
+    private fun parseSummaryToDishes(summary: String): List<OrderDishItem> {
+        if (summary.isBlank()) return emptyList()
+        return summary.split("、").mapNotNull { part ->
+            val match = Regex("(.+?)\\s*[xX×]\\s*(\\d+)").find(part.trim()) ?: return@mapNotNull null
+            OrderDishItem(
+                name = match.groupValues[1].trim(),
+                quantity = match.groupValues[2].toIntOrNull() ?: 1
+            )
         }
     }
 
