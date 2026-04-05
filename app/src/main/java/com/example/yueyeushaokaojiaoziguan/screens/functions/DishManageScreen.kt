@@ -26,8 +26,20 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
     var selected by remember { mutableStateOf(setOf<String>()) }
     var showAddSheet by remember { mutableStateOf(false) }
 
-    Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize()) {
+    Scaffold(
+        floatingActionButton = {
+            if (!manageMode) {
+                FloatingActionButton(
+                    onClick = { showAddSheet = true },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Text("+", fontSize = 24.sp, color = Color.White)
+                }
+            }
+        }
+    ) { scaffoldPadding ->
+        Box(Modifier.fillMaxSize().padding(scaffoldPadding)) {
+            Column(Modifier.fillMaxSize()) {
             // 顶部操作栏
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -131,21 +143,11 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
             }
         }
 
-        // 右下角添加按钮
-        if (!manageMode) {
-            FloatingActionButton(
-                onClick = { showAddSheet = true },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Text("+", fontSize = 24.sp, color = Color.White)
-            }
-        }
-
         // 添加菜品弹窗
         if (showAddSheet) {
             AddDishDialog(uiState = uiState, vm = vm, onDismiss = { showAddSheet = false })
         }
+    }
     }
 }
 
