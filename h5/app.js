@@ -549,14 +549,14 @@ async function init() {
   // 尝试从后端获取店名和桌台信息
   await fetchTableInfo(section, number);
 
-  // 桌台待结账时不允许新点单
-  if (MOCK.tableStatus && ['Pending Bill', 'pending_bill', '待结账'].includes(MOCK.tableStatus) && serverOrderIds.length === 0) {
+  // 桌台待结账时拦截所有人
+  if (MOCK.tableStatus && ['Pending Bill', 'pending_bill', '待结账'].includes(MOCK.tableStatus)) {
     const app = $('#app');
     app.innerHTML = `
       <div class="page welcome active" id="welcome">
         <h1>🔥 ${MOCK.shopName}</h1>
         <div class="sub">${MOCK.table.area} ${MOCK.table.number}号桌</div>
-        <div class="sub" style="color:#d32f2f;margin-top:20px">该桌正在结账中，请联系服务员</div>
+        <div class="sub" style="color:#d32f2f;margin-top:20px">本桌正在结算中，请稍后</div>
       </div>`;
     return;
   }
