@@ -61,7 +61,7 @@ fun AiAssistantScreen(vm: MerchantViewModel) {
     val todayOrders = remember(uiState.dashboardStats) {
         uiState.dashboardStats.find { it.title == "今日订单" }?.value ?: "0"
     }
-    val welcomeText = "你好呀老板！我是你的烧烤助手 🔥\n今天已经有 $todayOrders 单啦，营业额 $todayRevenue，继续加油！💪\n\n有什么需要帮忙的尽管说，不清楚我能做什么就点击"
+    val welcomeText = "你好呀，我是白玉安排给你的小助手 🔥\n今天已经有 $todayOrders 单啦，营业额 $todayRevenue，继续加油！💪\n\n有什么需要帮忙的尽管说，不清楚我能做什么就点击"
 
     var messages by remember(todayRevenue) {
         mutableStateOf(listOf(ChatMessage(welcomeText, isUser = false, type = "welcome")))
