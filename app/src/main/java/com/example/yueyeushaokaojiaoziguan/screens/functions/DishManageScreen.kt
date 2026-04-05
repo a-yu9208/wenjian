@@ -240,6 +240,8 @@ private fun EditDishDialog(dish: DishItem, uiState: MerchantUiState, vm: Merchan
     var minOrder by remember { mutableStateOf(dish.minOrder.toString()) }
     var category by remember { mutableStateOf(dish.category) }
     var quickServe by remember { mutableStateOf(dish.quickServe) }
+    var discountEnabled by remember { mutableStateOf(dish.discountEnabled) }
+    var discountPrice by remember { mutableStateOf(dish.discountPrice.replace("¥", "")) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -264,6 +266,19 @@ private fun EditDishDialog(dish: DishItem, uiState: MerchantUiState, vm: Merchan
                     Text("可快速上菜", fontSize = 14.sp, modifier = Modifier.weight(1f))
                     Switch(checked = quickServe, onCheckedChange = { quickServe = it })
                 }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("启用折扣", fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    Switch(checked = discountEnabled, onCheckedChange = { discountEnabled = it })
+                }
+                if (discountEnabled) {
+                    OutlinedTextField(
+                        value = discountPrice,
+                        onValueChange = { discountPrice = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("折扣价") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         },
         confirmButton = {
@@ -275,7 +290,9 @@ private fun EditDishDialog(dish: DishItem, uiState: MerchantUiState, vm: Merchan
                     description = desc,
                     minOrder = minOrder.toIntOrNull() ?: 1,
                     category = category,
-                    quickServe = quickServe
+                    quickServe = quickServe,
+                    discountEnabled = discountEnabled,
+                    discountPrice = if (discountEnabled) "¥$discountPrice" else ""
                 )
                 vm.updateDish(dish, updated)
                 onDismiss()
