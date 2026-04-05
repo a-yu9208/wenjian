@@ -27,6 +27,21 @@ import com.example.yueyeushaokaojiaoziguan.merchant.generateQrBitmap
 fun TableManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
     val clipboardManager = LocalClipboardManager.current
     var qrDialogUrl by remember { mutableStateOf<String?>(null) }
+    var deleteConfirmLabel by remember { mutableStateOf<String?>(null) }
+
+    if (deleteConfirmLabel != null) {
+        AlertDialog(
+            onDismissRequest = { deleteConfirmLabel = null },
+            title = { Text("确认删除") },
+            text = { Text("确定要删除 ${deleteConfirmLabel} 吗？") },
+            confirmButton = {
+                TextButton(onClick = { vm.deleteTable(deleteConfirmLabel!!); deleteConfirmLabel = null }) { Text("删除") }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteConfirmLabel = null }) { Text("取消") }
+            }
+        )
+    }
 
     if (qrDialogUrl != null) {
         Dialog(onDismissRequest = { qrDialogUrl = null }) {
@@ -138,7 +153,7 @@ fun TableManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                                 }, fontSize = 13.sp
                             )
                         }
-                        TextButton(onClick = { vm.deleteTable(table.label) }) {
+                        TextButton(onClick = { deleteConfirmLabel = table.label }) {
                             Text("删除", fontSize = 12.sp, color = Color(0xFFD32F2F))
                         }
                     }

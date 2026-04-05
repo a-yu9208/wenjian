@@ -26,10 +26,12 @@ import com.example.yueyeushaokaojiaoziguan.merchant.OrderItem
 fun HomeWorkbenchScreen(
     uiState: MerchantUiState,
     onAdvanceOrder: (String, String) -> Unit,
-    onToggleDishServed: (String, String) -> Unit,
+    onToggleDishServed: (String, String, String) -> Unit,
+    onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var subTab by rememberSaveable { mutableStateOf(HomeSubTab.Pending) }
+    var subTabName by rememberSaveable { mutableStateOf(HomeSubTab.Pending.name) }
+    val subTab = HomeSubTab.entries.find { it.name == subTabName } ?: HomeSubTab.Pending
     var expandedOrder by remember { mutableStateOf<String?>(null) }
 
     val filteredOrders = remember(subTab, uiState.orders) {
@@ -55,27 +57,33 @@ fun HomeWorkbenchScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        // 顶部子 Tab
-        ScrollableTabRow(
-            selectedTabIndex = HomeSubTab.entries.indexOf(subTab),
-            edgePadding = 8.dp,
-            divider = {}
-        ) {
-            HomeSubTab.entries.forEach { tab ->
-                Tab(
-                    selected = subTab == tab,
-                    onClick = { subTab = tab },
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(tab.label)
-                            val count = counts[tab] ?: 0
-                            if (count > 0) {
-                                Spacer(Modifier.width(4.dp))
-                                Badge { Text("$count") }
+        // 顶部子 Tab + 刷新
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ScrollableTabRow(
+                selectedTabIndex = HomeSubTab.entries.indexOf(subTab),
+                edgePadding = 8.dp,
+                divider = {},
+                modifier = Modifier.weight(1f)
+            ) {
+                HomeSubTab.entries.forEach { tab ->
+                    Tab(
+                        selected = subTab == tab,
+                        onClick = { subTabName = tab.name },
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(tab.label)
+                                val count = counts[tab] ?: 0
+                                if (count > 0) {
+                                    Spacer(Modifier.width(4.dp))
+                                    Badge { Text("$count") }
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
+            }
+            IconButton(onClick = onRefresh) {
+                Text("🔄", fontSize = 18.sp)
             }
         }
 
@@ -103,7 +111,7 @@ fun HomeWorkbenchScreen(
                             else (order.tableLabel + order.time)
                         },
                         onStatusClick = { onAdvanceOrder(order.tableLabel, order.time) },
-                        onToggleServed = { dishName -> onToggleDishServed(order.tableLabel, dishName) }
+                        onToggleServed = { dishName -> onToggleDishServed(order.tableLabel, order.time, dishName) }
                     )
                 }
             }

@@ -226,7 +226,7 @@ private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDis
             }
         },
         confirmButton = {
-            TextButton(onClick = { vm.addDishFromDraft(); onDismiss() }) { Text("保存") }
+            TextButton(onClick = { if (vm.addDishFromDraft()) onDismiss() }) { Text("保存") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("取消") }

@@ -179,13 +179,13 @@ class MerchantViewModel(
         )
     }
 
-    fun addDishFromDraft() {
+    fun addDishFromDraft(): Boolean {
         val draft = _uiState.value.dishDraft
         val priceValue = draft.price.trim()
         val stockValue = draft.stock.toIntOrNull()
         if (draft.name.isBlank() || priceValue.isBlank() || stockValue == null) {
             _uiState.value = _uiState.value.copy(errorMessage = "请先填写完整的菜品名称、价格和库存")
-            return
+            return false
         }
 
         val normalizedPrice = if (priceValue.startsWith("¥")) priceValue else "¥$priceValue"
@@ -224,12 +224,13 @@ class MerchantViewModel(
                     )
                 }
         }
+        return true
     }
 
-    fun toggleDishServed(tableLabel: String, dishName: String) {
+    fun toggleDishServed(tableLabel: String, time: String, dishName: String) {
         _uiState.value = _uiState.value.let { state ->
             state.copy(orders = state.orders.map { order ->
-                if (order.tableLabel == tableLabel) {
+                if (order.tableLabel == tableLabel && order.time == time) {
                     order.copy(dishes = order.dishes.map { dish ->
                         if (dish.name == dishName) dish.copy(served = !dish.served) else dish
                     })
@@ -444,7 +445,10 @@ class MerchantViewModel(
                     qrPreviewUrl = buildQrPreview(currentState.qrDraft),
                     loading = false,
                     refreshing = false,
-                    qrFileId = currentState.qrFileId
+                    qrFileId = currentState.qrFileId,
+                    pointsConfig = currentState.pointsConfig,
+                    pointsLogs = currentState.pointsLogs,
+                    profile = currentState.profile
                 )
             }.onSuccess { nextState ->
                 _uiState.value = nextState

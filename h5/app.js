@@ -145,6 +145,7 @@ function renderCartBar() {
 }
 
 function goConfirm() {
+  if (getCartCount() === 0) return;
   const wrap = $('#confirm');
   let html = '<div class="topbar"><button class="me-btn" onclick="show(\'menu\')">← 返回</button><span class="title">确认订单</span><span></span></div><div class="confirm-page">';
   for (const [id, v] of Object.entries(cart)) {
@@ -181,11 +182,17 @@ function submitOrder() {
   notes = {};
   renderOrderPage();
   show('order');
+  // 简单的成功提示
+  const toast = document.createElement('div');
+  toast.textContent = '下单成功！';
+  toast.style.cssText = 'position:fixed;top:20%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:10px 24px;border-radius:20px;z-index:99;font-size:15px';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 1500);
 }
 
 function renderOrderPage() {
   const wrap = $('#order');
-  let html = '<div class="topbar"><span class="title">订单状态</span><span class="info">' +
+  let html = '<div class="topbar"><button class="me-btn" onclick="goMenuFromOrder()">← 菜单</button><span class="title">订单状态</span><span class="info">' +
     MOCK.table.area + '-' + MOCK.table.number + '号桌</span></div><div class="order-page">';
   MOCK.orders.forEach((o, i) => {
     const label = o.isAppend ? `追加单 ${o.time}` : `第${i + 1}单 ${o.time}`;
@@ -213,7 +220,7 @@ function goMenuFromOrder() {
 function goBill() {
   const wrap = $('#bill');
   let subtotal = 0;
-  let html = '<div class="topbar"><span class="title">账单明细</span></div><div class="bill-page">';
+  let html = '<div class="topbar"><button class="me-btn" onclick="renderOrderPage();show(\'order\')">← 返回</button><span class="title">账单明细</span><span></span></div><div class="bill-page">';
   MOCK.orders.forEach(o => {
     o.dishes.forEach(d => {
       const dish = MOCK.dishes.find(x => x.name === d.name);
@@ -292,6 +299,20 @@ function init() {
     renderCatList();
     renderMenu();
     renderCartBar();
+    // 滚动时高亮对应分类
+    const dishList = $('.dish-list');
+    if (dishList) {
+      dishList.addEventListener('scroll', () => {
+        const headers = dishList.querySelectorAll('.cat-header');
+        let current = '';
+        headers.forEach(h => {
+          if (h.getBoundingClientRect().top <= 120) current = h.textContent;
+        });
+        if (current) {
+          $$('.cat-item').forEach(el => el.classList.toggle('active', el.textContent === current));
+        }
+      });
+    }
   }, 1500);
 }
 

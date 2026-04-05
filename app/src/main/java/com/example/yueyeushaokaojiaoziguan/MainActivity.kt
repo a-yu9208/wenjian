@@ -71,16 +71,12 @@ private fun ShaokaoMerchantApp() {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(uiState.noticeMessage) {
-        uiState.noticeMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            vm.dismissNotice()
-        }
-    }
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
+    LaunchedEffect(uiState.noticeMessage, uiState.errorMessage) {
+        val msg = uiState.errorMessage ?: uiState.noticeMessage
+        if (msg != null) {
+            snackbarHostState.showSnackbar(msg)
             vm.dismissError()
+            vm.dismissNotice()
         }
     }
 
@@ -109,6 +105,7 @@ private fun ShaokaoMerchantApp() {
                 uiState = uiState,
                 onAdvanceOrder = vm::advanceOrderStatus,
                 onToggleDishServed = vm::toggleDishServed,
+                onRefresh = vm::refreshMerchantData,
                 modifier = Modifier.padding(innerPadding)
             )
             MerchantTab.Orders -> OrderHistoryScreen(
