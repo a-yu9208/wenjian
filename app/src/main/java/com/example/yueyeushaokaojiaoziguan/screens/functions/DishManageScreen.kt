@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantUiState
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantViewModel
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
     var manageMode by remember { mutableStateOf(false) }
