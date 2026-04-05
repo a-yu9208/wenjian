@@ -194,7 +194,7 @@ async function submitOrder() {
     isAppend
   });
 
-  // 尝试提交到后端
+  // 提交到后端
   if (MOCK.tableId) {
     try {
       const res = await fetch(`${API_BASE}/customer/order`, {
@@ -206,8 +206,19 @@ async function submitOrder() {
       if (json.success && json.data) {
         serverOrderIds.push(json.data.orderId);
         localStorage.setItem('orderIds', JSON.stringify(serverOrderIds));
+      } else {
+        showToast('下单失败: ' + (json.error || json.msg || '未知错误'));
+        console.error('submitOrder fail:', json);
+        return;
       }
-    } catch (e) { /* 兜底用本地数据 */ }
+    } catch (e) {
+      showToast('网络错误: ' + e.message);
+      console.error('submitOrder error:', e);
+      return;
+    }
+  } else {
+    showToast('桌台信息缺失，无法下单');
+    return;
   }
 
   cart = {};
@@ -408,7 +419,7 @@ async function fetchTableInfo(section, number) {
         MOCK.table.number = String(json.data.table.number);
       }
     }
-  } catch (e) { /* 用 mock 数据兜底 */ }
+  } catch (e) { console.error('fetchTableInfo error:', e); }
 }
 
 // ========== 初始化 ==========

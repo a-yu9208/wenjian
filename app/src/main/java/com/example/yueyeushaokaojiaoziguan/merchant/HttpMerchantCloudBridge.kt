@@ -8,44 +8,36 @@ class HttpMerchantCloudBridge(
     override suspend fun fetchDashboardStats(): List<StatCard> {
         return when (val result = httpClient.get(MerchantApiConfig.dashboardPath)) {
             is MerchantApiResult.Success -> {
-                MerchantJsonParsers.parseDashboardStats(result.data).ifEmpty {
-                    MerchantSampleData.dashboardStats
-                }
+                MerchantJsonParsers.parseDashboardStats(result.data)
             }
-            is MerchantApiResult.Error -> MerchantSampleData.dashboardStats
+            is MerchantApiResult.Error -> throw Exception("仪表盘加载失败: ${result.message}")
         }
     }
 
     override suspend fun fetchDishes(): List<DishItem> {
         return when (val result = httpClient.get(MerchantApiConfig.dishesPath)) {
             is MerchantApiResult.Success -> {
-                MerchantJsonParsers.parseDishes(result.data).ifEmpty {
-                    MerchantSampleData.dishes
-                }
+                MerchantJsonParsers.parseDishes(result.data)
             }
-            is MerchantApiResult.Error -> MerchantSampleData.dishes
+            is MerchantApiResult.Error -> throw Exception("菜品加载失败: ${result.message}")
         }
     }
 
     override suspend fun fetchOrders(): List<OrderItem> {
         return when (val result = httpClient.get(MerchantApiConfig.ordersPath)) {
             is MerchantApiResult.Success -> {
-                MerchantJsonParsers.parseOrders(result.data).ifEmpty {
-                    MerchantSampleData.orders
-                }
+                MerchantJsonParsers.parseOrders(result.data)
             }
-            is MerchantApiResult.Error -> MerchantSampleData.orders
+            is MerchantApiResult.Error -> throw Exception("订单加载失败: ${result.message}")
         }
     }
 
     override suspend fun fetchTables(): List<TableItem> {
         return when (val result = httpClient.get(MerchantApiConfig.tablesPath)) {
             is MerchantApiResult.Success -> {
-                MerchantJsonParsers.parseTables(result.data).ifEmpty {
-                    MerchantSampleData.tables
-                }
+                MerchantJsonParsers.parseTables(result.data)
             }
-            is MerchantApiResult.Error -> MerchantSampleData.tables
+            is MerchantApiResult.Error -> throw Exception("桌台加载失败: ${result.message}")
         }
     }
 
