@@ -418,14 +418,6 @@ async function notifyMerchant() {
   }
 
   if (!serverOrderIds.length) showToast('已通知商家，请等待服务员收款');
-  // 结账后自动将桌台状态更新为空闲
-  if (MOCK.tableId) {
-    fetch(`${API_BASE}/merchant/table-status`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tableId: MOCK.tableId, status: 'idle' })
-    }).catch(() => {});
-  }
   const checkoutIds = [...serverOrderIds];
   serverOrderIds = [];
   localStorage.removeItem(currentTableKey);
@@ -517,6 +509,7 @@ async function fetchTableInfo(section, number) {
         MOCK.tableId = json.data.table.id;
         MOCK.table.area = { outside:'室外', first:'一楼', second:'二楼' }[json.data.table.section] || json.data.table.section;
         MOCK.table.number = String(json.data.table.number);
+        MOCK.tableStatus = json.data.table.status;
       }
     }
   } catch (e) { console.error('fetchTableInfo error:', e); }
@@ -555,6 +548,20 @@ async function init() {
 
   // 尝试从后端获取店名和桌台信息
   await fetchTableInfo(section, number);
+
+  // 桌台不是空闲状态，提示并阻止点餐
+  const busyStatuses = ['Occupied', 'occupied', 'Pending Bill', 'pending_bill', '使用中', '待结账'];
+  if (MOCK.tableStatus && busyStatuses.includes(MOCK.tableStatus) && serverOrderIds.length === 0) {
+    const app = $('#app');
+    app.innerHTML = `
+      <div class="page welcome active" id="welcome">
+        <h1>🔥 ${MOCK.shopName}</h1>
+        <div class="sub">${MOCK.table.area} ${MOCK.table.number}号桌</div>
+        <div class="sub" style="color:#d32f2f;margin-top:20px">该桌正在使用中，请联系服务员</div>
+      </div>`;
+    return;
+  }
+
   await fetchDishes();
 
   // 生成或读取匿名用户ID
