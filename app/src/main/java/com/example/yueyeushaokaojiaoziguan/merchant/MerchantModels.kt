@@ -111,7 +111,7 @@ data class PointsLog(
 )
 
 data class MerchantProfile(
-    val shopName: String = "夜月烧烤",
+    val shopName: String = "月月烧烤",
     val account: String = "店主账号",
     val h5BaseUrl: String = "https://api.teselx.cn",
     val mode: String = "单店模式"

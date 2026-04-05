@@ -1,6 +1,6 @@
 // ========== 模拟数据 ==========
 const MOCK = {
-  shopName: '夜月烧烤',
+  shopName: '月月烧烤',
   table: { area: '室外', number: '8' },
   user: { name: '微信用户', points: 120 },
   pointsRate: { earn: 1, deduct: 10 }, // 消费1元得1分, 10分抵1元

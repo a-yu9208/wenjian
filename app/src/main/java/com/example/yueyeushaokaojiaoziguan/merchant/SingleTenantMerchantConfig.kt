@@ -1,7 +1,7 @@
 package com.example.yueyeushaokaojiaoziguan.merchant
 
 object SingleTenantMerchantConfig {
-    const val merchantName = "夜月烧烤"
+    const val merchantName = "月月烧烤"
     const val merchantModeLabel = "单店模式"
     const val merchantAccount = "店主账号"
     const val customerH5BaseUrl = "https://api.teselx.cn"

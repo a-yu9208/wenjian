@@ -51,7 +51,7 @@ fun saveQrToGallery(context: Context, bitmap: Bitmap, fileName: String): Boolean
     val values = ContentValues().apply {
         put(MediaStore.Images.Media.DISPLAY_NAME, "$fileName.png")
         put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-        put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/夜月烧烤桌码")
+        put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/月月烧烤桌码")
     }
     val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return false
     return context.contentResolver.openOutputStream(uri)?.use { out ->
