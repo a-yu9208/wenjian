@@ -1,6 +1,7 @@
 package com.example.yueyeushaokaojiaoziguan.screens.functions
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -22,12 +24,16 @@ import androidx.compose.ui.window.Dialog
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantUiState
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantViewModel
 import com.example.yueyeushaokaojiaoziguan.merchant.generateQrBitmap
+import com.example.yueyeushaokaojiaoziguan.merchant.generateQrWithLabel
+import com.example.yueyeushaokaojiaoziguan.merchant.saveQrToGallery
 
 @Composable
 fun TableManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
     val clipboardManager = LocalClipboardManager.current
-    var qrDialogUrl by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    var qrDialog by remember { mutableStateOf<Pair<String, String>?>(null) } // url, label
     var deleteConfirmLabel by remember { mutableStateOf<String?>(null) }
+    var saveResult by remember { mutableStateOf<String?>(null) }
 
     if (deleteConfirmLabel != null) {
         AlertDialog(
@@ -43,22 +49,33 @@ fun TableManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
         )
     }
 
-    if (qrDialogUrl != null) {
-        Dialog(onDismissRequest = { qrDialogUrl = null }) {
+    if (qrDialog != null) {
+        val (url, label) = qrDialog!!
+        Dialog(onDismissRequest = { qrDialog = null; saveResult = null }) {
             Card(shape = RoundedCornerShape(16.dp)) {
                 Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("扫码点餐", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(Modifier.height(12.dp))
-                    val bmp = remember(qrDialogUrl) { generateQrBitmap(qrDialogUrl!!, 512) }
+                    val bmp = remember(url, label) { generateQrWithLabel(url, label, 512) }
                     Image(
                         bitmap = bmp.asImageBitmap(),
                         contentDescription = "二维码",
-                        modifier = Modifier.size(240.dp)
+                        modifier = Modifier.size(280.dp)
                     )
                     Spacer(Modifier.height(8.dp))
-                    Text(qrDialogUrl!!, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(url, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (saveResult != null) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(saveResult!!, fontSize = 13.sp, color = Color(0xFF2E7D32))
+                    }
                     Spacer(Modifier.height(12.dp))
-                    TextButton(onClick = { qrDialogUrl = null }) { Text("关闭") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        FilledTonalButton(onClick = {
+                            val ok = saveQrToGallery(context, bmp, label.replace(" ", "-"))
+                            saveResult = if (ok) "已保存到相册" else "保存失败"
+                        }) { Text("保存到相册") }
+                        TextButton(onClick = { qrDialog = null; saveResult = null }) { Text("关闭") }
+                    }
                 }
             }
         }
@@ -108,7 +125,10 @@ fun TableManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                             TextButton(onClick = { clipboardManager.setText(AnnotatedString(uiState.qrPreviewUrl)) }) {
                                 Text("复制链接")
                             }
-                            TextButton(onClick = { qrDialogUrl = uiState.qrPreviewUrl }) {
+                            TextButton(onClick = {
+                                val area = com.example.yueyeushaokaojiaoziguan.merchant.MerchantUiTextMapper.localizeArea(uiState.qrDraft.section)
+                                qrDialog = uiState.qrPreviewUrl to "$area ${uiState.qrDraft.tableNumber}号桌"
+                            }) {
                                 Text("查看二维码")
                             }
                         }
@@ -140,6 +160,7 @@ fun TableManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                             modifier = Modifier
                                 .size(56.dp)
                                 .padding(end = 8.dp)
+                                .clickable { qrDialog = table.customerLink to "${table.area} ${table.label}" }
                         )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
