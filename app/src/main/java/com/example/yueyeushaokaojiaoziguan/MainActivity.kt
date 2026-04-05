@@ -63,6 +63,7 @@ private fun ShaokaoMerchantApp() {
     val vm: MerchantViewModel = viewModel(factory = MerchantViewModelFactory(MerchantAppContainer.repository))
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var funcResetTrigger by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(uiState.noticeMessage, uiState.errorMessage) {
         val msg = uiState.errorMessage ?: uiState.noticeMessage
@@ -89,7 +90,10 @@ private fun ShaokaoMerchantApp() {
                     )
                     NavigationBarItem(
                         selected = selected,
-                        onClick = { currentTabName = tab.name },
+                        onClick = { 
+                            if (tab == MerchantTab.Functions && currentTab == MerchantTab.Functions) funcResetTrigger++
+                            currentTabName = tab.name
+                        },
                         icon = {
                             Box(contentAlignment = Alignment.Center) {
                                 if (selected) {
@@ -118,7 +122,7 @@ private fun ShaokaoMerchantApp() {
             when (tab) {
                 MerchantTab.Home -> HomeWorkbenchScreen(uiState, vm::advanceOrderStatus, vm::toggleDishServed, vm::refreshMerchantData, Modifier.padding(innerPadding))
                 MerchantTab.Orders -> OrderHistoryScreen(uiState, vm, Modifier.padding(innerPadding))
-                MerchantTab.Functions -> FunctionsScreen(uiState, vm, Modifier.padding(innerPadding))
+                MerchantTab.Functions -> FunctionsScreen(uiState, vm, Modifier.padding(innerPadding), funcResetTrigger)
             }
         }
     }

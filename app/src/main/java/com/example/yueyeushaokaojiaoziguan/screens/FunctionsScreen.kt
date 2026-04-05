@@ -40,9 +40,12 @@ private val entryGradients = mapOf(
 )
 
 @Composable
-fun FunctionsScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier: Modifier = Modifier) {
+fun FunctionsScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier: Modifier = Modifier, resetTrigger: Int = 0) {
     var activePageName by rememberSaveable { mutableStateOf<String?>(null) }
     val activePage = activePageName?.let { name -> FunctionEntry.entries.find { it.name == name } }
+
+    // 点底栏"功能"时重置到列表
+    LaunchedEffect(resetTrigger) { if (resetTrigger > 0) activePageName = null }
 
     if (activePage != null) {
         FunctionSubPage(activePage, uiState, vm, { activePageName = null }, modifier)

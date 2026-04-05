@@ -19,7 +19,7 @@ enum class FunctionEntry(val label: String, val icon: String, val desc: String) 
     CategorySetting("分类设置", "📂", "管理菜品分类"),
     TableManage("桌台管理", "🪑", "桌码与状态"),
     PointsActivity("积分活动", "🎁", "积分规则与流水"),
-    AiAssistant("AI 辅助", "🤖", "智能助手对话"),
+    AiAssistant("烤烤助理", "🧚", "智能小助手对话"),
     Profile("个人信息", "👤", "店铺与账号")
 }
 
