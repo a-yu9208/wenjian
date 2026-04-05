@@ -81,12 +81,6 @@ fun OrderHistoryScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier
         // Tab 栏
         TabRow(
             selectedTabIndex = tabs.indexOf(selectedTab),
-            indicator = { tabPositions ->
-                TabRowDefaults.SecondaryIndicator(
-                    Modifier.tabIndicatorOffset(tabPositions[tabs.indexOf(selectedTab)]),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            },
             divider = {}
         ) {
             tabs.forEach { tab ->

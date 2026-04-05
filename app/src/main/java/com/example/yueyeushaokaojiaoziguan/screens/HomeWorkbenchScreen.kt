@@ -60,14 +60,6 @@ fun HomeWorkbenchScreen(
                 selectedTabIndex = pagerState.currentPage,
                 edgePadding = 8.dp,
                 divider = {},
-                indicator = { tabPositions ->
-                    if (pagerState.currentPage < tabPositions.size) {
-                        TabRowDefaults.SecondaryIndicator(
-                            Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
                 modifier = Modifier.weight(1f)
             ) {
                 subTabs.forEachIndexed { index, tab ->
