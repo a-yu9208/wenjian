@@ -1,5 +1,6 @@
 package com.example.yueyeushaokaojiaoziguan.screens.functions
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantUiState
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantViewModel
 import kotlinx.coroutines.launch
@@ -47,23 +49,64 @@ fun PointsActivityScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
 
 @Composable
 private fun PointsQueryTab(vm: MerchantViewModel) {
-    var queryPhone by remember { mutableStateOf("") }
-    var queryResult by remember { mutableStateOf<String?>(null) }
+    val uiState by vm.uiState.collectAsStateWithLifecycle()
+    var selectedPhone by remember { mutableStateOf<String?>(null) }
+    var detailLogs by remember { mutableStateOf<List<com.example.yueyeushaokaojiaoziguan.merchant.PointsLog>>(emptyList()) }
 
-    Column(Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)), shape = RoundedCornerShape(16.dp)) {
-            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("🔍", fontSize = 32.sp); Spacer(Modifier.width(12.dp))
-                Column { Text("查询积分", fontWeight = FontWeight.Bold, fontSize = 16.sp); Text("输入手机号查询用户积分", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    LaunchedEffect(Unit) { vm.fetchAllPointsUsers() }
+
+    if (selectedPhone != null) {
+        // 积分明细页
+        Column(Modifier.fillMaxSize().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { selectedPhone = null }) { Text("← 返回") }
+                Spacer(Modifier.width(8.dp))
+                Text("$selectedPhone 积分明细", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+            Spacer(Modifier.height(8.dp))
+            if (detailLogs.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("暂无记录", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(detailLogs) { log ->
+                        Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(12.dp)) {
+                            Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Column { Text(log.reason.ifBlank { "积分变动" }, fontWeight = FontWeight.Medium); Text(log.time, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                Text(if (log.delta > 0) "+${log.delta}" else "${log.delta}", fontWeight = FontWeight.Bold, color = if (log.delta > 0) Color(0xFF2E7D32) else Color(0xFFD32F2F))
+                            }
+                        }
+                    }
+                }
             }
         }
-        OutlinedTextField(value = queryPhone, onValueChange = { queryPhone = it.filter(Char::isDigit) },
-            label = { Text("手机号") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-        FilledTonalButton(onClick = { if (queryPhone.length == 11) vm.queryPoints(queryPhone) { queryResult = it } }, modifier = Modifier.fillMaxWidth()) { Text("查询") }
-        queryResult?.let {
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)), shape = RoundedCornerShape(12.dp)) {
-                Text(it, fontSize = 15.sp, color = Color(0xFF2E7D32), modifier = Modifier.padding(16.dp))
+    } else {
+        // 用户列表
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)), shape = RoundedCornerShape(16.dp)) {
+                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("🔍", fontSize = 32.sp); Spacer(Modifier.width(12.dp))
+                        Column { Text("积分用户", fontWeight = FontWeight.Bold, fontSize = 16.sp); Text("共 ${uiState.pointsUsers.size} 位用户", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    }
+                }
+            }
+            if (uiState.pointsUsers.isEmpty()) {
+                item { Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { Text("暂无积分用户", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+            } else {
+                items(uiState.pointsUsers) { user ->
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.clickable {
+                            selectedPhone = user.phone
+                            vm.queryPointsDetail(user.phone) { detailLogs = it }
+                        }
+                    ) {
+                        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text(user.phone, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                            Text("${user.points} 积分", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
             }
         }
     }

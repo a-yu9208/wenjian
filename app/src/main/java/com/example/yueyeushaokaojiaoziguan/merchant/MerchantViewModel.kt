@@ -564,6 +564,52 @@ class MerchantViewModel(
         }
     }
 
+    fun fetchAllPointsUsers() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val users = runCatching {
+                val httpClient = MerchantHttpClient()
+                when (val res = httpClient.get("/merchant/points/all")) {
+                    is MerchantApiResult.Success -> {
+                        val json = org.json.JSONObject(res.data)
+                        val arr = json.optJSONObject("data")?.optJSONArray("users")
+                        buildList {
+                            if (arr != null) for (i in 0 until arr.length()) {
+                                val u = arr.optJSONObject(i) ?: continue
+                                add(PointsUser(u.optString("phone"), u.optInt("points", 0)))
+                            }
+                        }
+                    }
+                    is MerchantApiResult.Error -> emptyList()
+                }
+            }.getOrElse { emptyList() }
+            withContext(Dispatchers.Main) {
+                _uiState.value = _uiState.value.copy(pointsUsers = users)
+            }
+        }
+    }
+
+    fun queryPointsDetail(phone: String, onResult: (List<PointsLog>) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val logs = runCatching {
+                val httpClient = MerchantHttpClient()
+                when (val res = httpClient.get("/merchant/points?phone=$phone")) {
+                    is MerchantApiResult.Success -> {
+                        val json = org.json.JSONObject(res.data)
+                        val arr = json.optJSONObject("data")?.optJSONArray("logs")
+                        buildList {
+                            if (arr != null) for (i in 0 until arr.length()) {
+                                val l = arr.optJSONObject(i) ?: continue
+                                add(PointsLog(target = phone, delta = l.optInt("delta"), reason = l.optString("reason"), time = l.optString("time")))
+                            }
+                        }
+                    }
+                    is MerchantApiResult.Error -> emptyList()
+                }
+            }.getOrElse { emptyList() }
+            withContext(Dispatchers.Main) { onResult(logs) }
+        }
+    }
+
     fun addPointsLog(target: String, delta: Int, reason: String) {
         if (target.isBlank() || delta == 0) {
             _uiState.value = _uiState.value.copy(errorMessage = "请填写对象和积分数量")

@@ -184,7 +184,7 @@ async function submitOrder() {
     const d = MOCK.dishes.find(x => x.id == id);
     if (!d) continue;
     dishes.push({ name: d.name, qty: v.qty, note: notes[id] || '', served: false, quick: d.quick });
-    apiItems.push({ dishId: d.id, quantity: v.qty });
+    apiItems.push({ dishId: d.id, quantity: v.qty, note: notes[id] || '' });
     d.stock = Math.max(0, d.stock - v.qty);
   }
   const isAppend = MOCK.orders.length > 0;

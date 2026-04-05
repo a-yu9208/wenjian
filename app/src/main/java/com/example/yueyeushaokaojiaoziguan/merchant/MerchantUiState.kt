@@ -21,5 +21,6 @@ data class MerchantUiState(
     val selectedDishes: Set<String> = emptySet(),
     val pointsConfig: PointsConfig = PointsConfig(),
     val pointsLogs: List<PointsLog> = emptyList(),
+    val pointsUsers: List<PointsUser> = emptyList(),
     val profile: MerchantProfile = MerchantProfile()
 )

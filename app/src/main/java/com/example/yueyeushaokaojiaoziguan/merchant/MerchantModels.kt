@@ -126,3 +126,8 @@ data class MerchantProfile(
     val h5BaseUrl: String = "https://api.teselx.cn",
     val mode: String = "单店模式"
 )
+
+data class PointsUser(
+    val phone: String,
+    val points: Int
+)
