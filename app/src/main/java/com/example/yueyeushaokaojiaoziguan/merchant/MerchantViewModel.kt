@@ -2,11 +2,13 @@ package com.example.yueyeushaokaojiaoziguan.merchant
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MerchantViewModel(
     private val repository: MerchantRepository = MockMerchantRepository()
@@ -80,7 +82,7 @@ class MerchantViewModel(
         }
         _uiState.value = nextState
         val targetDish = nextState.dishes.firstOrNull { it.name == name } ?: return
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             runCatching { repository.pushDishStock(name, targetDish.stock) }
                 .onFailure {
                     _uiState.value = _uiState.value.copy(
@@ -185,7 +187,7 @@ class MerchantViewModel(
             dishes = _uiState.value.dishes.filterNot { it.name in names },
             noticeMessage = "已删除 ${names.size} 道菜品"
         )
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             runCatching { repository.deleteDishes(names) }
         }
     }
@@ -227,7 +229,7 @@ class MerchantViewModel(
             noticeMessage = "已新增菜品：${newDish.name}",
             errorMessage = null
         )
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             runCatching { repository.createDish(newDish) }
                 .onFailure {
                     _uiState.value = _uiState.value.copy(
@@ -274,7 +276,7 @@ class MerchantViewModel(
         _uiState.value = nextState
         val targetOrder = nextState.orders.firstOrNull { it.tableLabel == tableLabel && it.time == time } ?: return
         if (targetOrder.id > 0) {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 runCatching { repository.pushOrderStatus(targetOrder.id.toString(), targetOrder.status) }
                     .onFailure {
                         _uiState.value = _uiState.value.copy(
@@ -308,7 +310,7 @@ class MerchantViewModel(
         }
         _uiState.value = nextState
         val targetTable = nextState.tables.firstOrNull { it.label == label } ?: return
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             runCatching { repository.pushTableStatus(label, targetTable.status) }
                 .onFailure {
                     _uiState.value = _uiState.value.copy(
@@ -326,7 +328,7 @@ class MerchantViewModel(
             return
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = _uiState.value.copy(refreshing = true, errorMessage = null, noticeMessage = null)
             runCatching {
                 repository.generateTableQrCode(
@@ -433,7 +435,7 @@ class MerchantViewModel(
     }
 
     private fun fetchMerchantData(initialLoad: Boolean) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val currentState = _uiState.value
             _uiState.value = currentState.copy(
                 loading = initialLoad,
@@ -442,6 +444,7 @@ class MerchantViewModel(
             )
 
             runCatching {
+                withContext(Dispatchers.IO) {
                 val dashboard = async { repository.getDashboardStats() }
                 val entries = async { repository.getQuickEntries() }
                 val dishesDeferred = async { repository.getDishes() }
@@ -470,24 +473,12 @@ class MerchantViewModel(
                     pointsLogs = currentState.pointsLogs,
                     profile = currentState.profile
                 )
+                }
             }.onSuccess { nextState ->
                 val allEmpty = nextState.dashboardStats.isEmpty() && nextState.dishes.isEmpty()
                         && nextState.orders.isEmpty() && nextState.tables.isEmpty()
                 _uiState.value = if (allEmpty) {
-                    // 直接再请求一次 dashboard 看原始返回
-                    val debugResult = try {
-                        val url = java.net.URL("${MerchantApiConfig.baseApiUrl}/merchant/dashboard")
-                        val conn = url.openConnection() as java.net.HttpURLConnection
-                        conn.connectTimeout = 8000
-                        conn.readTimeout = 8000
-                        val code = conn.responseCode
-                        val body = conn.inputStream?.bufferedReader()?.readText()?.take(100) ?: "null"
-                        conn.disconnect()
-                        "HTTP $code: $body"
-                    } catch (e: Exception) {
-                        "${e.javaClass.simpleName}: ${e.message}"
-                    }
-                    nextState.copy(errorMessage = "解析为空 | $debugResult")
+                    nextState.copy(errorMessage = "服务器返回数据为空，请检查网络")
                 } else nextState
             }.onFailure { error ->
                 _uiState.value = currentState.copy(
