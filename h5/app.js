@@ -322,23 +322,80 @@ function goBill() {
   const utensils = MOCK.orders.length > 0 ? 2 : 0;
   const utensilTotal = utensils * MOCK.utensilFee;
   html += `<div class="bill-row"><span>餐具费 x${utensils}</span><span>¥${utensilTotal}</span></div>`;
-  const pointsAvail = MOCK.user.points;
-  const maxDeduct = Math.floor(pointsAvail / MOCK.pointsRate.deduct);
-  html += `<div class="points-toggle">
-    <input type="checkbox" id="usePoints" ${usePoints ? 'checked' : ''} onchange="usePoints=this.checked;goBill()">
-    <label for="usePoints">使用${pointsAvail}积分抵扣¥${maxDeduct}</label>
-  </div>`;
-  const deduct = usePoints ? maxDeduct : 0;
-  const total = subtotal + utensilTotal - deduct;
-  html += `<div class="bill-row total"><span>应付</span><span>¥${total}</span></div>`;
-  html += `<div class="bill-notice">请找服务员付款</div>`;
+  // 手机号输入 + 查询积分
   html += `<div class="phone-input-wrap">
-    <input type="tel" id="checkoutPhone" class="phone-input" placeholder="输入手机号获得积分（选填）" maxlength="11"
-      value="${localStorage.getItem('userPhone') || ''}">
+    <input type="tel" id="checkoutPhone" class="phone-input" placeholder="输入手机号查询积分并获得积分（选填）" maxlength="11"
+      value="${localStorage.getItem('userPhone') || ''}" oninput="onPhoneInput(this.value)">
   </div>`;
+  html += `<div id="pointsSection"></div>`;
+  const total = subtotal + utensilTotal;
+  html += `<div class="bill-row total" id="billTotal"><span>应付</span><span>¥${total}</span></div>`;
+  html += `<div class="bill-notice">请找服务员付款</div>`;
   html += `<button class="bill-submit" onclick="notifyMerchant()">确认结账</button></div>`;
   wrap.innerHTML = html;
   show('bill');
+  // 保存小计供积分计算用
+  MOCK._billSubtotal = subtotal + utensilTotal;
+  MOCK._billPoints = 0;
+  usePoints = false;
+  // 如果已有手机号，自动查询积分
+  const saved = localStorage.getItem('userPhone');
+  if (saved && /^1\d{10}$/.test(saved)) fetchBillPoints(saved);
+}
+
+let _phoneTimer = null;
+function onPhoneInput(val) {
+  clearTimeout(_phoneTimer);
+  const phone = val.trim();
+  if (/^1\d{10}$/.test(phone)) {
+    _phoneTimer = setTimeout(() => fetchBillPoints(phone), 300);
+  } else {
+    // 手机号不完整，清空积分区域
+    const sec = document.getElementById('pointsSection');
+    if (sec) sec.innerHTML = '';
+    MOCK._billPoints = 0;
+    usePoints = false;
+    updateBillTotal();
+  }
+}
+
+async function fetchBillPoints(phone) {
+  const sec = document.getElementById('pointsSection');
+  if (!sec) return;
+  sec.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0">查询积分中...</div>';
+  try {
+    const res = await fetch(`${API_BASE}/customer/points?phone=${encodeURIComponent(phone)}`);
+    const json = await res.json();
+    if (json.success && json.data) {
+      const pts = json.data.points || 0;
+      MOCK._billPoints = pts;
+      MOCK.user.points = pts;
+      const maxDeduct = Math.floor(pts / MOCK.pointsRate.deduct);
+      if (pts > 0) {
+        sec.innerHTML = `<div class="points-toggle">
+          <input type="checkbox" id="usePoints" ${usePoints ? 'checked' : ''} onchange="usePoints=this.checked;updateBillTotal()">
+          <label for="usePoints">使用${pts}积分抵扣¥${maxDeduct}</label>
+        </div>`;
+      } else {
+        sec.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0">该手机号暂无可用积分</div>';
+      }
+      updateBillTotal();
+    } else {
+      sec.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0">积分查询失败</div>';
+    }
+  } catch (e) {
+    sec.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0">积分查询失败</div>';
+  }
+}
+
+function updateBillTotal() {
+  const el = document.getElementById('billTotal');
+  if (!el) return;
+  const base = MOCK._billSubtotal || 0;
+  const pts = MOCK._billPoints || 0;
+  const maxDeduct = Math.floor(pts / MOCK.pointsRate.deduct);
+  const deduct = usePoints ? maxDeduct : 0;
+  el.innerHTML = `<span>应付</span><span>¥${base - deduct}</span>`;
 }
 
 async function notifyMerchant() {
