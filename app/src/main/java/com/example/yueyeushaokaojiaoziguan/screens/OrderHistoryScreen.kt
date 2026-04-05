@@ -84,6 +84,9 @@ fun OrderHistoryScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier
             Text("  $dateLabel", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 12.dp))
         }
 
+        // 显示筛选结果数量
+        Text("  ${dateLabel}共 ${filtered.size} 条订单", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp))
+
         // Tab 栏
         TabRow(
             selectedTabIndex = tabs.indexOf(selectedTab),
@@ -107,7 +110,7 @@ fun OrderHistoryScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("📋", fontSize = 48.sp)
                     Spacer(Modifier.height(8.dp))
-                    Text("暂无订单记录", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${dateLabel}暂无订单记录", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         } else {
