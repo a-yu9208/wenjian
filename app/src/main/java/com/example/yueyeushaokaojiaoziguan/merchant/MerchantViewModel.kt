@@ -270,13 +270,15 @@ class MerchantViewModel(
         }
         _uiState.value = nextState
         val targetOrder = nextState.orders.firstOrNull { it.tableLabel == tableLabel && it.time == time } ?: return
-        viewModelScope.launch {
-            runCatching { repository.pushOrderStatus(tableLabel, targetOrder.status) }
-                .onFailure {
-                    _uiState.value = _uiState.value.copy(
-                        errorMessage = "订单已本地更新，但同步后端失败：${it.message ?: "请稍后重试"}"
-                    )
-                }
+        if (targetOrder.id > 0) {
+            viewModelScope.launch {
+                runCatching { repository.pushOrderStatus(targetOrder.id.toString(), targetOrder.status) }
+                    .onFailure {
+                        _uiState.value = _uiState.value.copy(
+                            errorMessage = "订单已本地更新，但同步后端失败：${it.message ?: "请稍后重试"}"
+                        )
+                    }
+            }
         }
     }
 

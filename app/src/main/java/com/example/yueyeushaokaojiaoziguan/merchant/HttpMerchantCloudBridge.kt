@@ -83,13 +83,14 @@ class HttpMerchantCloudBridge(
     }
 
     override suspend fun pushOrderStatus(tableLabel: String, status: String) {
-        val requestBody = """
-            {
-              "action": "updateOrderStatus",
-              "tableLabel": "$tableLabel",
-              "status": "$status"
-            }
-        """.trimIndent()
+        val statusMap = mapOf("待处理" to "Pending", "制作中" to "Grilling", "待结账" to "Checkout", "已完成" to "Completed")
+        val enStatus = statusMap[status] ?: status
+        val orderId = tableLabel.toIntOrNull()
+        val requestBody = if (orderId != null) {
+            """{"action":"updateStatus","orderId":$orderId,"status":"$enStatus"}"""
+        } else {
+            """{"action":"updateOrderStatus","tableLabel":"$tableLabel","status":"$enStatus"}"""
+        }
         httpClient.post(MerchantApiConfig.orderActionsPath, requestBody)
     }
 

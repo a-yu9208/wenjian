@@ -58,6 +58,7 @@ data class OrderDishItem(
 )
 
 data class OrderItem(
+    val id: Int = 0,
     val tableLabel: String,
     val summary: String,
     val amount: String,

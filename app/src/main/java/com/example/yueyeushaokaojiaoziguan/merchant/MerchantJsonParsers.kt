@@ -49,6 +49,9 @@ object MerchantJsonParsers {
         }
     }
 
+    private val statusToCn = mapOf("Pending" to "待处理", "Grilling" to "制作中", "Checkout" to "待结账", "Completed" to "已完成")
+    private val statusToEn = mapOf("待处理" to "Pending", "制作中" to "Grilling", "待结账" to "Checkout", "已完成" to "Completed")
+
     fun parseOrders(json: String): List<OrderItem> {
         if (json.isBlank()) return emptyList()
         val root = JSONObject(json)
@@ -61,10 +64,11 @@ object MerchantJsonParsers {
                 val item = ordersArray.optJSONObject(index) ?: continue
                 add(
                     OrderItem(
+                        id = item.optInt("id"),
                         tableLabel = item.optString("tableLabel"),
                         summary = item.optString("summary"),
                         amount = item.optString("amount"),
-                        status = item.optString("status"),
+                        status = statusToCn[item.optString("status")] ?: item.optString("status"),
                         time = item.optString("time")
                     )
                 )
