@@ -269,13 +269,33 @@ function goMe() {
   show('me');
 }
 
+// ========== API ==========
+const API_BASE = '';  // 同域，nginx 反代
+
+async function fetchTableInfo(section, number) {
+  try {
+    const res = await fetch(`${API_BASE}/customer/table?section=${section}&number=${number}`);
+    const json = await res.json();
+    if (json.success && json.data) {
+      if (json.data.shopName) MOCK.shopName = json.data.shopName;
+      if (json.data.table) {
+        MOCK.table.area = { outside:'室外', first:'一楼', second:'二楼' }[json.data.table.section] || json.data.table.section;
+        MOCK.table.number = String(json.data.table.number);
+      }
+    }
+  } catch (e) { /* 用 mock 数据兜底 */ }
+}
+
 // ========== 初始化 ==========
-function init() {
+async function init() {
   const params = new URLSearchParams(location.search);
   const section = params.get('section') || 'outside';
   const number = params.get('number') || '8';
   MOCK.table.area = { outside:'室外', first:'一楼', second:'二楼' }[section] || section;
   MOCK.table.number = number;
+
+  // 尝试从后端获取店名和桌台信息
+  await fetchTableInfo(section, number);
 
   const app = $('#app');
   app.innerHTML = `
