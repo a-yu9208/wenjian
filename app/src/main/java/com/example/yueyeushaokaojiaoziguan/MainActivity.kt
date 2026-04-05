@@ -36,7 +36,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.yueyeushaokaojiaoziguan.merchant.*
 import com.example.yueyeushaokaojiaoziguan.screens.*
 import com.example.yueyeushaokaojiaoziguan.ui.theme.GradientOrange
-import com.example.yueyeushaokaojiaoziguan.ui.theme.YueyeushaokaojiaoziguanThemeclass MainActivity : ComponentActivity() {
+import com.example.yueyeushaokaojiaoziguan.ui.theme.YueyeushaokaojiaoziguanTheme
+
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
