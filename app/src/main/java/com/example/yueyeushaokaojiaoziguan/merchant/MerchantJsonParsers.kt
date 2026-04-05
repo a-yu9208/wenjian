@@ -45,7 +45,8 @@ object MerchantJsonParsers {
                         type = item.optString("type"),
                         quickServe = item.optBoolean("quickServe", false),
                         description = item.optString("description"),
-                        minOrder = item.optInt("minOrder", 1)
+                        minOrder = item.optInt("minOrder", 1),
+                        imageUri = item.optString("imageUrl")
                     )
                 )
             }

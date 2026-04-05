@@ -1,5 +1,8 @@
 package com.example.yueyeushaokaojiaoziguan.screens.functions
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,9 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.yueyeushaokaojiaoziguan.merchant.MerchantApiConfig
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantUiState
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantViewModel
 import com.example.yueyeushaokaojiaoziguan.merchant.DishItem
@@ -71,13 +78,18 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                                 Spacer(Modifier.width(8.dp))
                             }
 
-                            // 图片占位
+                            // 图片
                             Box(
                                 Modifier.size(56.dp).clip(RoundedCornerShape(8.dp))
                                     .background(MaterialTheme.colorScheme.surfaceVariant),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("🍖", fontSize = 24.sp)
+                                if (dish.imageUri.isNotBlank()) {
+                                    val imgUrl = if (dish.imageUri.startsWith("http")) dish.imageUri else "${MerchantApiConfig.baseApiUrl}${dish.imageUri}"
+                                    AsyncImage(model = imgUrl, contentDescription = dish.name, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                } else {
+                                    Text("🍖", fontSize = 24.sp)
+                                }
                             }
 
                             Spacer(Modifier.width(12.dp))
@@ -314,6 +326,19 @@ private fun EditDishDialog(dish: DishItem, uiState: MerchantUiState, vm: Merchan
     var quickServe by remember { mutableStateOf(dish.quickServe) }
     var discountEnabled by remember { mutableStateOf(dish.discountEnabled) }
     var discountPrice by remember { mutableStateOf(dish.discountPrice.replace("¥", "")) }
+    var imageUri by remember { mutableStateOf(dish.imageUri) }
+    var uploading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri ?: return@rememberLauncherForActivityResult
+        uploading = true
+        val bytes = context.contentResolver.openInputStream(uri)?.readBytes() ?: return@rememberLauncherForActivityResult
+        vm.uploadDishImage(bytes, "dish_${System.currentTimeMillis()}.jpg") { url ->
+            if (url != null) imageUri = url
+            uploading = false
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -323,6 +348,22 @@ private fun EditDishDialog(dish: DishItem, uiState: MerchantUiState, vm: Merchan
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // 图片
+                Box(
+                    Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { launcher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (uploading) {
+                        CircularProgressIndicator(Modifier.size(24.dp))
+                    } else if (imageUri.isNotBlank()) {
+                        val imgUrl = if (imageUri.startsWith("http")) imageUri else "${MerchantApiConfig.baseApiUrl}$imageUri"
+                        AsyncImage(model = imgUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    } else {
+                        Text("点击上传图片", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("菜品名称") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = price, onValueChange = { price = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("价格") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = stock, onValueChange = { stock = it.filter(Char::isDigit) }, label = { Text("库存") }, singleLine = true, modifier = Modifier.fillMaxWidth())
@@ -364,7 +405,8 @@ private fun EditDishDialog(dish: DishItem, uiState: MerchantUiState, vm: Merchan
                     category = category,
                     quickServe = quickServe,
                     discountEnabled = discountEnabled,
-                    discountPrice = if (discountEnabled) "¥$discountPrice" else ""
+                    discountPrice = if (discountEnabled) "¥$discountPrice" else "",
+                    imageUri = imageUri
                 )
                 vm.updateDish(dish, updated)
                 onDismiss()

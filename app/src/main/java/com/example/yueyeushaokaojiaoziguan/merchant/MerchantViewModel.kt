@@ -98,6 +98,17 @@ class MerchantViewModel(
         _uiState.value = _uiState.value.copy(showAddDishDialog = true)
     }
 
+    fun uploadDishImage(imageBytes: ByteArray, fileName: String, onResult: (String?) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val url = runCatching {
+                (repository as? CloudBackedMerchantRepository)?.let {
+                    (it.bridge as? HttpMerchantCloudBridge)?.uploadImage(imageBytes, fileName)
+                }
+            }.getOrNull()
+            withContext(Dispatchers.Main) { onResult(url) }
+        }
+    }
+
     fun hideAddDishDialog() {
         _uiState.value = _uiState.value.copy(showAddDishDialog = false)
     }

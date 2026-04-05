@@ -1,7 +1,7 @@
 package com.example.yueyeushaokaojiaoziguan.merchant
 
 class CloudBackedMerchantRepository(
-    private val bridge: MerchantCloudBridge
+    val bridge: MerchantCloudBridge
 ) : MerchantRepository {
     override suspend fun getDashboardStats(): List<StatCard> = bridge.fetchDashboardStats()
 

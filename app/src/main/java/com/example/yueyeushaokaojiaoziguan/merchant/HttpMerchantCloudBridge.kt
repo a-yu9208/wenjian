@@ -142,7 +142,7 @@ class HttpMerchantCloudBridge(
 
     override suspend fun updateDish(dish: DishItem) {
         val price = dish.price.replace("¥", "").toDoubleOrNull() ?: 0.0
-        val requestBody = """{"name":"${dish.name}","category":"${dish.category}","price":$price,"stock":${dish.stock},"type":"${dish.type}","description":"${dish.description}","minOrder":${dish.minOrder},"quickServe":${dish.quickServe}}"""
+        val requestBody = """{"name":"${dish.name}","category":"${dish.category}","price":$price,"stock":${dish.stock},"type":"${dish.type}","description":"${dish.description}","minOrder":${dish.minOrder},"quickServe":${dish.quickServe},"imageUrl":"${dish.imageUri}"}"""
         httpClient.post("/merchant/dishes/update", requestBody)
     }
 
@@ -153,5 +153,36 @@ class HttpMerchantCloudBridge(
 
     override suspend fun pushDishServed(orderId: String, dishName: String) {
         httpClient.post(MerchantApiConfig.orderActionsPath, """{"action":"toggleServed","orderId":$orderId,"dishName":"$dishName"}""")
+    }
+
+    fun uploadImage(imageBytes: ByteArray, fileName: String): String? {
+        val boundary = "----FormBoundary${System.currentTimeMillis()}"
+        val url = java.net.URL("${baseUrl.trimEnd('/')}/merchant/upload")
+        val conn = (url.openConnection() as java.net.HttpURLConnection).apply {
+            requestMethod = "POST"
+            doOutput = true
+            connectTimeout = 15000
+            readTimeout = 15000
+            setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+        }
+        conn.outputStream.use { os ->
+            val writer = os.bufferedWriter()
+            writer.write("--$boundary\r\n")
+            writer.write("Content-Disposition: form-data; name=\"file\"; filename=\"$fileName\"\r\n")
+            writer.write("Content-Type: image/jpeg\r\n\r\n")
+            writer.flush()
+            os.write(imageBytes)
+            os.flush()
+            writer.write("\r\n--$boundary--\r\n")
+            writer.flush()
+        }
+        val code = conn.responseCode
+        val text = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.readText().orEmpty()
+        conn.disconnect()
+        if (code !in 200..299) return null
+        return try {
+            val json = org.json.JSONObject(text)
+            json.optJSONObject("data")?.optString("url")
+        } catch (_: Exception) { null }
     }
 }
