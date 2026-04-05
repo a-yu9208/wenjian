@@ -3,10 +3,13 @@ package com.example.yueyeushaokaojiaoziguan.merchant
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -16,9 +19,11 @@ class MerchantViewModel(
 
     private val _uiState = MutableStateFlow(MerchantUiState())
     val uiState: StateFlow<MerchantUiState> = _uiState.asStateFlow()
+    private var pollJob: Job? = null
 
     init {
         loadMerchantData()
+        startAutoRefresh()
     }
 
     fun loadMerchantData() {
@@ -27,6 +32,21 @@ class MerchantViewModel(
 
     fun refreshMerchantData() {
         fetchMerchantData(initialLoad = false)
+    }
+
+    private fun startAutoRefresh() {
+        pollJob?.cancel()
+        pollJob = viewModelScope.launch {
+            while (isActive) {
+                delay(5000L)
+                fetchMerchantData(initialLoad = false)
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        pollJob?.cancel()
     }
 
     fun updateQrDraft(
