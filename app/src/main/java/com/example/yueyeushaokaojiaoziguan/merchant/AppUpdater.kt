@@ -1,10 +1,8 @@
 package com.example.yueyeushaokaojiaoziguan.merchant
 
 import android.app.DownloadManager
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.net.Uri
 import android.os.Environment
 import android.os.Handler
@@ -60,19 +58,7 @@ object AppUpdater {
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         downloadId = dm.enqueue(request)
 
-        // 监听下载完成
-        context.registerReceiver(object : BroadcastReceiver() {
-            override fun onReceive(ctx: Context, intent: Intent) {
-                val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-                if (id == downloadId) {
-                    ctx.unregisterReceiver(this)
-                    onProgress(100)
-                    installApk(ctx, file)
-                }
-            }
-        }, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_NOT_EXPORTED)
-
-        // 轮询进度
+        // 轮询进度，下载完成直接安装
         Thread {
             while (true) {
                 val query = DownloadManager.Query().setFilterById(downloadId)
@@ -83,7 +69,12 @@ object AppUpdater {
                     if (total > 0) mainHandler.post { onProgress((downloaded * 100 / total).toInt()) }
                     val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
                     cursor.close()
-                    if (status == DownloadManager.STATUS_SUCCESSFUL || status == DownloadManager.STATUS_FAILED) break
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                        mainHandler.post { onProgress(100) }
+                        mainHandler.post { installApk(context, file) }
+                        break
+                    }
+                    if (status == DownloadManager.STATUS_FAILED) break
                 } else { cursor.close(); break }
                 Thread.sleep(500)
             }
