@@ -53,7 +53,8 @@ data class OrderDishItem(
     val quantity: Int,
     val note: String = "",
     val served: Boolean = false,
-    val quickServe: Boolean = false
+    val quickServe: Boolean = false,
+    val subItems: List<OrderDishItem> = emptyList()
 )
 
 data class OrderItem(

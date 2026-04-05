@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.yueyeushaokaojiaoziguan.merchant.HomeSubTab
 import com.example.yueyeushaokaojiaoziguan.merchant.MerchantUiState
+import com.example.yueyeushaokaojiaoziguan.merchant.OrderDishItem
 import com.example.yueyeushaokaojiaoziguan.merchant.OrderItem
 
 @Composable
@@ -184,67 +185,79 @@ private fun OrderWorkCard(
                 Spacer(Modifier.height(8.dp))
 
                 val dishesToShow = when (subTab) {
-                    HomeSubTab.QuickServe -> order.dishes.filter { it.quickServe }
+                    HomeSubTab.QuickServe -> order.dishes.filter {
+                        it.quickServe || it.subItems.any { s -> s.quickServe }
+                    }
                     else -> order.dishes
                 }
 
                 dishesToShow.forEach { dish ->
-                    var showConfirm by remember { mutableStateOf(false) }
-
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable(enabled = canSlash) {
-                                if (dish.served) showConfirm = true
-                                else onToggleServed(dish.name)
-                            }
-                            .padding(vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                    if (dish.subItems.isNotEmpty()) {
+                        // 套餐标题
+                        val allServed = dish.subItems.all { it.served }
                         Text(
-                            "${dish.name} x${dish.quantity}",
-                            textDecoration = if (dish.served) TextDecoration.LineThrough else TextDecoration.None,
-                            color = if (dish.served) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                            fontSize = 15.sp
+                            "📦 ${dish.name} x${dish.quantity}",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                            color = if (allServed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                            textDecoration = if (allServed) TextDecoration.LineThrough else TextDecoration.None,
+                            modifier = Modifier.padding(top = 6.dp)
                         )
-                        if (dish.served) {
-                            Text("已上", color = Color(0xFF2E7D32), fontSize = 13.sp)
+                        // 套餐子菜品
+                        dish.subItems.forEach { sub ->
+                            DishRow(dish = sub, canSlash = canSlash, indent = true, onToggleServed = onToggleServed)
                         }
-                        if (dish.quickServe && !dish.served) {
-                            Text("可直接上", color = Color(0xFFFF6B35), fontSize = 13.sp)
-                        }
-                    }
-
-                    if (dish.note.isNotBlank()) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFFFFF3E0))
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
-                        ) {
-                            Text("备注：${dish.note}", color = Color(0xFFE65100), fontSize = 13.sp)
-                        }
-                    }
-
-                    if (showConfirm) {
-                        AlertDialog(
-                            onDismissRequest = { showConfirm = false },
-                            title = { Text("取消已上菜") },
-                            text = { Text("确认取消「${dish.name}」的已上菜标记？") },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    onToggleServed(dish.name)
-                                    showConfirm = false
-                                }) { Text("确认") }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showConfirm = false }) { Text("取消") }
-                            }
-                        )
+                    } else {
+                        DishRow(dish = dish, canSlash = canSlash, indent = false, onToggleServed = onToggleServed)
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DishRow(
+    dish: OrderDishItem,
+    canSlash: Boolean,
+    indent: Boolean,
+    onToggleServed: (String) -> Unit
+) {
+    var showConfirm by remember { mutableStateOf(false) }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(start = if (indent) 24.dp else 0.dp)
+            .clickable(enabled = canSlash) {
+                if (dish.served) showConfirm = true
+                else onToggleServed(dish.name)
+            }
+            .padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            "${if (indent) "└ " else ""}${dish.name} x${dish.quantity}",
+            textDecoration = if (dish.served) TextDecoration.LineThrough else TextDecoration.None,
+            color = if (dish.served) Color.Gray else Color.Unspecified,
+            fontSize = if (indent) 14.sp else 15.sp
+        )
+        if (dish.served) Text("已上", color = Color(0xFF2E7D32), fontSize = 13.sp)
+        if (dish.quickServe && !dish.served) Text("可直接上", color = Color(0xFFFF6B35), fontSize = 13.sp)
+    }
+    if (dish.note.isNotBlank()) {
+        Box(
+            Modifier.fillMaxWidth().padding(start = if (indent) 24.dp else 0.dp)
+                .clip(RoundedCornerShape(6.dp)).background(Color(0xFFFFF3E0))
+                .padding(horizontal = 10.dp, vertical = 4.dp)
+        ) { Text("备注：${dish.note}", color = Color(0xFFE65100), fontSize = 13.sp) }
+    }
+    if (showConfirm) {
+        AlertDialog(
+            onDismissRequest = { showConfirm = false },
+            title = { Text("取消已上菜") },
+            text = { Text("确认取消「${dish.name}」的已上菜标记？") },
+            confirmButton = { TextButton(onClick = { onToggleServed(dish.name); showConfirm = false }) { Text("确认") } },
+            dismissButton = { TextButton(onClick = { showConfirm = false }) { Text("取消") } }
+        )
     }
 }

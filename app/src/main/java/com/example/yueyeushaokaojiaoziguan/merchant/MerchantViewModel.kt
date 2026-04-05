@@ -55,6 +55,14 @@ class MerchantViewModel(
         _uiState.value = _uiState.value.copy(noticeMessage = null)
     }
 
+    fun showAddDishDialog() {
+        _uiState.value = _uiState.value.copy(showAddDishDialog = true)
+    }
+
+    fun hideAddDishDialog() {
+        _uiState.value = _uiState.value.copy(showAddDishDialog = false)
+    }
+
     fun updateDishStock(name: String, delta: Int) {
         val nextState = _uiState.value.let { state ->
             val updated = state.dishes.map { dish ->
@@ -232,7 +240,14 @@ class MerchantViewModel(
             state.copy(orders = state.orders.map { order ->
                 if (order.tableLabel == tableLabel && order.time == time) {
                     order.copy(dishes = order.dishes.map { dish ->
-                        if (dish.name == dishName) dish.copy(served = !dish.served) else dish
+                        if (dish.subItems.isNotEmpty()) {
+                            val updatedSubs = dish.subItems.map { sub ->
+                                if (sub.name == dishName) sub.copy(served = !sub.served) else sub
+                            }
+                            dish.copy(subItems = updatedSubs, served = updatedSubs.all { it.served })
+                        } else {
+                            if (dish.name == dishName) dish.copy(served = !dish.served) else dish
+                        }
                     })
                 } else order
             })

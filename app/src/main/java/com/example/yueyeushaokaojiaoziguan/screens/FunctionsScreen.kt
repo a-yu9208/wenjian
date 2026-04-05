@@ -34,7 +34,8 @@ fun FunctionsScreen(
             entry = activePage,
             uiState = uiState,
             vm = vm,
-            onBack = { activePageName = null }
+            onBack = { activePageName = null },
+            modifier = modifier
         )
     } else {
         LazyVerticalGrid(
@@ -74,9 +75,11 @@ private fun FunctionSubPage(
     entry: FunctionEntry,
     uiState: MerchantUiState,
     vm: MerchantViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(entry.label) },
@@ -84,6 +87,16 @@ private fun FunctionSubPage(
                     TextButton(onClick = onBack) { Text("返回") }
                 }
             )
+        },
+        floatingActionButton = {
+            if (entry == FunctionEntry.DishManage) {
+                FloatingActionButton(
+                    onClick = { vm.showAddDishDialog() },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Text("+", fontSize = 24.sp, color = Color.White)
+                }
+            }
         }
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {

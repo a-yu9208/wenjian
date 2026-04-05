@@ -41,7 +41,11 @@ object MerchantSampleData {
             "一楼 3 号桌", "双人套餐 x1、烤茄子 x1", "¥146.00", "制作中", "18:39",
             area = "一楼",
             dishes = listOf(
-                OrderDishItem("双人套餐", 1),
+                OrderDishItem("双人套餐", 1, subItems = listOf(
+                    OrderDishItem("招牌羊肉串", 10),
+                    OrderDishItem("蒜香鸡翅", 2),
+                    OrderDishItem("啤酒", 2, quickServe = true)
+                )),
                 OrderDishItem("烤茄子", 1)
             )
         ),
@@ -57,7 +61,12 @@ object MerchantSampleData {
             "室外 12 号桌", "夜宵套餐 x1", "¥168.00", "待结账", "18:18",
             area = "室外",
             dishes = listOf(
-                OrderDishItem("夜宵套餐", 1, served = true)
+                OrderDishItem("夜宵套餐", 1, served = true, subItems = listOf(
+                    OrderDishItem("招牌羊肉串", 15, served = true),
+                    OrderDishItem("蒜香鸡翅", 4, served = true),
+                    OrderDishItem("烤茄子", 2, served = true),
+                    OrderDishItem("啤酒", 4, quickServe = true, served = true)
+                ))
             ),
             utensilCount = 2
         ),

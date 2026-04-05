@@ -17,6 +17,7 @@ data class MerchantUiState(
     val noticeMessage: String? = null,
     val qrFileId: String = "",
     val dishManageMode: Boolean = false,
+    val showAddDishDialog: Boolean = false,
     val selectedDishes: Set<String> = emptySet(),
     val pointsConfig: PointsConfig = PointsConfig(),
     val pointsLogs: List<PointsLog> = emptyList(),

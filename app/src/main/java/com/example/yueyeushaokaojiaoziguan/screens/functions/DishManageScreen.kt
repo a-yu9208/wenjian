@@ -25,22 +25,9 @@ import com.example.yueyeushaokaojiaoziguan.merchant.MerchantViewModel
 fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
     var manageMode by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(setOf<String>()) }
-    var showAddSheet by remember { mutableStateOf(false) }
 
-    Scaffold(
-        floatingActionButton = {
-            if (!manageMode) {
-                FloatingActionButton(
-                    onClick = { showAddSheet = true },
-                    containerColor = MaterialTheme.colorScheme.primary
-                ) {
-                    Text("+", fontSize = 24.sp, color = Color.White)
-                }
-            }
-        }
-    ) { scaffoldPadding ->
-        Box(Modifier.fillMaxSize().padding(scaffoldPadding)) {
-            Column(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
             // 顶部操作栏
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -145,10 +132,9 @@ fun DishManageScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
         }
 
         // 添加菜品弹窗
-        if (showAddSheet) {
-            AddDishDialog(uiState = uiState, vm = vm, onDismiss = { showAddSheet = false })
+        if (uiState.showAddDishDialog) {
+            AddDishDialog(uiState = uiState, vm = vm, onDismiss = { vm.hideAddDishDialog() })
         }
-    }
     }
 }
 
@@ -228,10 +214,10 @@ private fun AddDishDialog(uiState: MerchantUiState, vm: MerchantViewModel, onDis
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (vm.addDishFromDraft()) onDismiss() }) { Text("保存") }
+            TextButton(onClick = { if (vm.addDishFromDraft()) vm.hideAddDishDialog() }) { Text("保存") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
+            TextButton(onClick = { vm.hideAddDishDialog() }) { Text("取消") }
         }
     )
 }
