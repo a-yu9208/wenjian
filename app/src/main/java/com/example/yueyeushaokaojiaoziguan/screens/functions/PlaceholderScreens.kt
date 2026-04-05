@@ -24,11 +24,38 @@ fun PointsActivityScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
     var deltaInput by remember { mutableStateOf("") }
     var reason by remember { mutableStateOf("") }
     var isDeduct by remember { mutableStateOf(false) }
+    var queryPhone by remember { mutableStateOf("") }
+    var queryResult by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // 查询积分
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("查询积分", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    OutlinedTextField(
+                        value = queryPhone,
+                        onValueChange = { queryPhone = it.filter(Char::isDigit) },
+                        label = { Text("手机号") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    FilledTonalButton(onClick = {
+                        if (queryPhone.length == 11) {
+                            vm.queryPoints(queryPhone) { result -> queryResult = result }
+                        }
+                    }) { Text("查询") }
+                    queryResult?.let {
+                        Text(it, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        }
+
         // 积分规则
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {

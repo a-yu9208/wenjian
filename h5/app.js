@@ -478,7 +478,10 @@ async function loadPointsLog() {
   if (!el) return;
   const phone = localStorage.getItem('userPhone');
   if (!phone) {
-    el.innerHTML = '<div class="me-row" style="color:var(--text2)">结账时填写手机号即可累积积分</div>';
+    el.innerHTML = `<div class="phone-input-wrap">
+      <input type="tel" id="mePhone" class="phone-input" placeholder="输入手机号查询积分" maxlength="11">
+      <button class="btn-primary" style="margin-top:8px;width:100%" onclick="queryMePoints()">查询</button>
+    </div>`;
     return;
   }
   try {

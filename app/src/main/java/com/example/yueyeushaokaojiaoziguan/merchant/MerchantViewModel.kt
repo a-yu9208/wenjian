@@ -503,6 +503,24 @@ class MerchantViewModel(
         )
     }
 
+    fun queryPoints(phone: String, onResult: (String) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = runCatching {
+                val httpClient = MerchantHttpClient()
+                when (val res = httpClient.get("/merchant/points?phone=$phone")) {
+                    is MerchantApiResult.Success -> {
+                        val json = org.json.JSONObject(res.data)
+                        val data = json.optJSONObject("data")
+                        val pts = data?.optInt("points", 0) ?: 0
+                        "手机号 $phone 当前积分：$pts"
+                    }
+                    is MerchantApiResult.Error -> "查询失败：${res.message}"
+                }
+            }.getOrElse { "查询失败：${it.message}" }
+            withContext(Dispatchers.Main) { onResult(result) }
+        }
+    }
+
     fun addPointsLog(target: String, delta: Int, reason: String) {
         if (target.isBlank() || delta == 0) {
             _uiState.value = _uiState.value.copy(errorMessage = "请填写对象和积分数量")
