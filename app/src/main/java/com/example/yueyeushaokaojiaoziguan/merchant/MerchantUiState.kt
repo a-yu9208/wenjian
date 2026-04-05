@@ -22,5 +22,6 @@ data class MerchantUiState(
     val pointsConfig: PointsConfig = PointsConfig(),
     val pointsLogs: List<PointsLog> = emptyList(),
     val pointsUsers: List<PointsUser> = emptyList(),
+    val checkoutAlert: String? = null,
     val profile: MerchantProfile = MerchantProfile()
 )

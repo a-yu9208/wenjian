@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,7 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -114,15 +117,40 @@ private fun ShaokaoMerchantApp() {
             }
         }
     ) { innerPadding ->
-        AnimatedContent(
-            targetState = currentTab,
-            transitionSpec = { fadeIn(tween(250)) + scaleIn(initialScale = 0.96f, animationSpec = tween(250)) togetherWith fadeOut(tween(150)) },
-            label = "page"
-        ) { tab ->
-            when (tab) {
-                MerchantTab.Home -> HomeWorkbenchScreen(uiState, vm::advanceOrderStatus, vm::toggleDishServed, vm::refreshMerchantData, Modifier.padding(innerPadding))
-                MerchantTab.Orders -> OrderHistoryScreen(uiState, vm, Modifier.padding(innerPadding))
-                MerchantTab.Functions -> FunctionsScreen(uiState, vm, Modifier.padding(innerPadding), funcResetTrigger)
+        Box(Modifier.fillMaxSize()) {
+            AnimatedContent(
+                targetState = currentTab,
+                transitionSpec = { fadeIn(tween(250)) + scaleIn(initialScale = 0.96f, animationSpec = tween(250)) togetherWith fadeOut(tween(150)) },
+                label = "page"
+            ) { tab ->
+                when (tab) {
+                    MerchantTab.Home -> HomeWorkbenchScreen(uiState, vm::advanceOrderStatus, vm::toggleDishServed, vm::refreshMerchantData, Modifier.padding(innerPadding))
+                    MerchantTab.Orders -> OrderHistoryScreen(uiState, vm, Modifier.padding(innerPadding))
+                    MerchantTab.Functions -> FunctionsScreen(uiState, vm, Modifier.padding(innerPadding), funcResetTrigger)
+                }
+            }
+
+            // 全局结账通知横幅
+            AnimatedVisibility(
+                visible = uiState.checkoutAlert != null,
+                enter = slideInVertically { -it } + fadeIn(),
+                exit = slideOutVertically { -it } + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = innerPadding.calculateTopPadding())
+            ) {
+                uiState.checkoutAlert?.let { msg ->
+                    LaunchedEffect(msg) { kotlinx.coroutines.delay(5000L); vm.dismissCheckoutAlert() }
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFF6B35)),
+                        shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { vm.dismissCheckoutAlert() }
+                    ) {
+                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("🔔", fontSize = 20.sp)
+                            Spacer(Modifier.width(10.dp))
+                            Text(msg, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                        }
+                    }
+                }
             }
         }
     }

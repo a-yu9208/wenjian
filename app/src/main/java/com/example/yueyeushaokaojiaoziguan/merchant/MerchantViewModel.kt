@@ -47,8 +47,18 @@ class MerchantViewModel(
                         while (isActive) {
                             val line = reader.readLine() ?: break
                             if (line.startsWith("data:")) {
+                                val payload = line.removePrefix("data:").trim()
                                 withContext(Dispatchers.Main) {
                                     fetchMerchantData(initialLoad = false)
+                                    // 解析 checkout 事件
+                                    try {
+                                        val json = org.json.JSONObject(payload)
+                                        if (json.optString("type") == "checkout") {
+                                            val area = json.optString("area")
+                                            val table = json.optString("table")
+                                            _uiState.value = _uiState.value.copy(checkoutAlert = "${area} ${table} 的客人申请结账啦！")
+                                        }
+                                    } catch (_: Exception) {}
                                 }
                             }
                         }
@@ -92,6 +102,10 @@ class MerchantViewModel(
 
     fun dismissNotice() {
         _uiState.value = _uiState.value.copy(noticeMessage = null)
+    }
+
+    fun dismissCheckoutAlert() {
+        _uiState.value = _uiState.value.copy(checkoutAlert = null)
     }
 
     fun sendAiMessage(message: String, onResult: (String) -> Unit) {
