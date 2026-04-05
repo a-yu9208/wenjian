@@ -31,6 +31,14 @@ let usePoints = false;
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;top:20%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:10px 24px;border-radius:20px;z-index:99;font-size:14px';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1800);
+}
+
 function show(pageId) {
   $$('.page').forEach(p => p.classList.remove('active'));
   const el = $(`#${pageId}`);
@@ -67,6 +75,7 @@ function changeQty(id, delta) {
   if (delta > 0 && cur === 0) {
     next = Math.max(d.min, 1);
     if (next > d.stock) return;
+    if (d.min > 1) showToast(`${d.name} ${d.min}份起点`);
   }
   if (delta < 0 && next > 0 && next < d.min) {
     next = 0;
@@ -102,6 +111,7 @@ function renderMenu() {
             <div class="dish-name">${d.name}</div>
             <div class="dish-desc">${d.desc}</div>
             ${d.stock <= 10 && d.stock > 0 ? `<div class="dish-stock">仅剩${d.stock}份</div>` : ''}
+            ${d.min > 1 ? `<div class="dish-min">${d.min}份起点</div>` : ''}
           </div>
           <div class="dish-bottom">
             <div class="dish-price">${getDisplayPrice(d)}</div>
@@ -182,12 +192,7 @@ function submitOrder() {
   notes = {};
   renderOrderPage();
   show('order');
-  // 简单的成功提示
-  const toast = document.createElement('div');
-  toast.textContent = '下单成功！';
-  toast.style.cssText = 'position:fixed;top:20%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:10px 24px;border-radius:20px;z-index:99;font-size:15px';
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 1500);
+  showToast('下单成功！');
 }
 
 function renderOrderPage() {

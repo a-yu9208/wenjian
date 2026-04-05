@@ -28,7 +28,7 @@ button{border:none;cursor:pointer;font:inherit}
 .dish-bottom{display:flex;justify-content:space-between;align-items:center}
 .dish-price{color:var(--brand);font-weight:700;font-size:15px}
 .dish-price .orig{text-decoration:line-through;color:var(--text2);font-size:12px;font-weight:400;margin-right:4px}
-.dish-stock{font-size:11px;color:var(--red)}.dish-soldout{font-size:13px;color:var(--text2)}
+.dish-stock{font-size:11px;color:var(--red)}.dish-min{font-size:11px;color:var(--brand)}.dish-soldout{font-size:13px;color:var(--text2)}
 
 .qty-ctrl{display:flex;align-items:center;gap:6px}
 .qty-btn{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700}
