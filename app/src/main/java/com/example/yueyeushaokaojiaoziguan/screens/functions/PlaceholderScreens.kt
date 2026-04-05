@@ -216,5 +216,16 @@ fun ProfileScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                 }
             }
         }
+        item {
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            val versionName = remember { try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName } catch (_: Exception) { "未知" } }
+            val versionCode = remember { try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionCode } catch (_: Exception) { 0 } }
+            Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("月月烧烤商家版", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("版本 v$versionName ($versionCode)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(4.dp))
+                Text("© 2026 白玉工作室", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+            }
+        }
     }
 }
