@@ -97,15 +97,21 @@ class MerchantViewModel(
     fun sendAiMessage(message: String, onResult: (String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val reply = runCatching {
-                val httpClient = MerchantHttpClient()
-                val body = """{"message":"${message.replace("\"", "\\\"").replace("\n", "\\n")}"}"""
-                when (val res = httpClient.post("/merchant/ai-chat", body)) {
-                    is MerchantApiResult.Success -> {
-                        val json = org.json.JSONObject(res.data)
-                        json.optJSONObject("data")?.optString("reply") ?: "无回复"
-                    }
-                    is MerchantApiResult.Error -> "请求失败：${res.message}"
+                val url = java.net.URL("${MerchantApiConfig.baseApiUrl}/merchant/ai-chat")
+                val conn = (url.openConnection() as java.net.HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    doOutput = true
+                    connectTimeout = 15000
+                    readTimeout = 90000 // AI回复需要较长时间
+                    setRequestProperty("Content-Type", "application/json")
                 }
+                val body = """{"message":"${message.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")}"}"""
+                conn.outputStream.use { it.write(body.toByteArray()) }
+                val code = conn.responseCode
+                val text = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.readText().orEmpty()
+                conn.disconnect()
+                val json = org.json.JSONObject(text)
+                json.optJSONObject("data")?.optString("reply") ?: "无回复"
             }.getOrElse { "网络错误：${it.message}" }
             withContext(Dispatchers.Main) { onResult(reply) }
         }
