@@ -29,7 +29,7 @@ object MerchantSampleData {
 
     val orders = listOf(
         OrderItem(
-            "室外 8 号桌", "羊肉串 x12、鸡翅 x2、酸梅汤 x2", "¥86.00", "待处理", "18:42",
+            tableLabel = "室外 8 号桌", summary = "羊肉串 x12、鸡翅 x2、酸梅汤 x2", amount = "¥86.00", status = "待处理", time = "18:42",
             area = "室外",
             dishes = listOf(
                 OrderDishItem("招牌羊肉串", 12),
@@ -38,7 +38,7 @@ object MerchantSampleData {
             )
         ),
         OrderItem(
-            "一楼 3 号桌", "双人套餐 x1、烤茄子 x1", "¥146.00", "制作中", "18:39",
+            tableLabel = "一楼 3 号桌", summary = "双人套餐 x1、烤茄子 x1", amount = "¥146.00", status = "制作中", time = "18:39",
             area = "一楼",
             dishes = listOf(
                 OrderDishItem("双人套餐", 1, subItems = listOf(
@@ -50,7 +50,7 @@ object MerchantSampleData {
             )
         ),
         OrderItem(
-            "二楼 2 号桌", "羊肉串 x20、花生米 x2", "¥104.00", "制作中", "18:30",
+            tableLabel = "二楼 2 号桌", summary = "羊肉串 x20、花生米 x2", amount = "¥104.00", status = "制作中", time = "18:30",
             area = "二楼",
             dishes = listOf(
                 OrderDishItem("招牌羊肉串", 20),
@@ -58,7 +58,7 @@ object MerchantSampleData {
             )
         ),
         OrderItem(
-            "室外 12 号桌", "夜宵套餐 x1", "¥168.00", "待结账", "18:18",
+            tableLabel = "室外 12 号桌", summary = "夜宵套餐 x1", amount = "¥168.00", status = "待结账", time = "18:18",
             area = "室外",
             dishes = listOf(
                 OrderDishItem("夜宵套餐", 1, served = true, subItems = listOf(
@@ -71,7 +71,7 @@ object MerchantSampleData {
             utensilCount = 2
         ),
         OrderItem(
-            "室外 8 号桌", "啤酒 x3、花生米 x1", "¥32.00", "待处理", "18:55",
+            tableLabel = "室外 8 号桌", summary = "啤酒 x3、花生米 x1", amount = "¥32.00", status = "待处理", time = "18:55",
             area = "室外",
             isAppend = true, appendIndex = 1,
             dishes = listOf(
