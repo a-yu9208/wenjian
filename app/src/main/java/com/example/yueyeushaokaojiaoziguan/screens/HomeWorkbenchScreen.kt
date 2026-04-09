@@ -127,7 +127,9 @@ fun HomeWorkbenchScreen(
                     }
                 }
             } else {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
@@ -146,6 +148,7 @@ fun HomeWorkbenchScreen(
                             )
                         }
                     }
+                }
                 }
             }
         }
