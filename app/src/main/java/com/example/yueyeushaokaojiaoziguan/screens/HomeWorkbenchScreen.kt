@@ -166,7 +166,7 @@ private fun OrderWorkCard(
         "待结账" -> listOf(Color(0xFFFFB74D), Color(0xFFFFE082))
         else -> listOf(Color(0xFF66BB6A), Color(0xFFA5D6A7))
     }
-    val displayLabel = if (order.isAppend) "${order.area}-${order.tableLabel}-追加${order.appendIndex}" else "${order.area}-${order.tableLabel}"
+    val displayLabel = if (order.isAppend) "${order.tableLabel}(追加${order.appendIndex})" else order.tableLabel
     val canSlash = subTab == HomeSubTab.Cooking || subTab == HomeSubTab.QuickServe
 
     Card(

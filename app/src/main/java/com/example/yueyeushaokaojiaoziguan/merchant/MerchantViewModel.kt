@@ -65,6 +65,10 @@ class MerchantViewModel(
                                                 _uiState.value = _uiState.value.copy(checkoutAlert = "${area} ${table} 有新订单！")
                                                 TtsManager.speak("${area}${table}客人下单啦")
                                             }
+                                            "append_order" -> {
+                                                _uiState.value = _uiState.value.copy(checkoutAlert = "${area} ${table} 加单啦！")
+                                                TtsManager.speak("${area}${table}客人加单啦")
+                                            }
                                         }
                                     } catch (_: Exception) {}
                                     fetchMerchantData(initialLoad = false)
