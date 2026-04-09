@@ -34,15 +34,15 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeWorkbenchScreen(
     uiState: MerchantUiState,
-    onAdvanceOrder: (String, String) -> Unit,
-    onToggleDishServed: (String, String, String) -> Unit,
+    onAdvanceOrder: (Int) -> Unit,
+    onToggleDishServed: (Int, String) -> Unit,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val subTabs = HomeSubTab.entries
     val pagerState = rememberPagerState(pageCount = { subTabs.size })
     val scope = rememberCoroutineScope()
-    var expandedOrder by remember { mutableStateOf<String?>(null) }
+    var expandedOrder by remember { mutableStateOf<Int?>(null) }
 
     val counts = remember(uiState.orders) {
         mapOf(
@@ -134,10 +134,10 @@ fun HomeWorkbenchScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     itemsIndexed(pageOrders, key = { _, it -> "${it.id}_${it.tableLabel}_${it.time}" }) { _, order ->
-                        OrderWorkCard(order, pageTab, expandedOrder == (order.tableLabel + order.time),
-                            { expandedOrder = if (expandedOrder == (order.tableLabel + order.time)) null else (order.tableLabel + order.time) },
-                            { onAdvanceOrder(order.tableLabel, order.time) },
-                            { dishName -> onToggleDishServed(order.tableLabel, order.time, dishName) }
+                        OrderWorkCard(order, pageTab, expandedOrder == order.id,
+                            { expandedOrder = if (expandedOrder == order.id) null else order.id },
+                            { onAdvanceOrder(order.id) },
+                            { dishName -> onToggleDishServed(order.id, dishName) }
                         )
                     }
                 }

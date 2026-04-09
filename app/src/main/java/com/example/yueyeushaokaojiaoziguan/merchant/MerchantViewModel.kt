@@ -420,10 +420,10 @@ class MerchantViewModel(
         return true
     }
 
-    fun toggleDishServed(tableLabel: String, time: String, dishName: String) {
+    fun toggleDishServed(orderId: Int, dishName: String) {
         _uiState.value = _uiState.value.let { state ->
             val updatedOrders = state.orders.map { order ->
-                if (order.tableLabel == tableLabel && order.time == time) {
+                if (order.id == orderId) {
                     val updatedDishes = order.dishes.map { dish ->
                         if (dish.subItems.isNotEmpty()) {
                             val updatedSubs = dish.subItems.map { sub ->
@@ -439,13 +439,11 @@ class MerchantViewModel(
                     order.copy(dishes = updatedDishes, status = newStatus)
                 } else order
             }
-            val changed = updatedOrders.firstOrNull { it.tableLabel == tableLabel && it.time == time }
-            val original = state.orders.firstOrNull { it.tableLabel == tableLabel && it.time == time }
+            val changed = updatedOrders.firstOrNull { it.id == orderId }
+            val original = state.orders.firstOrNull { it.id == orderId }
             if (changed != null && changed.id > 0) {
                 viewModelScope.launch(Dispatchers.IO) {
-                    // 同步上菜状态
                     runCatching { repository.pushDishServed(changed.id.toString(), dishName) }
-                    // 同步订单状态变更
                     if (original != null && changed.status != original.status) {
                         runCatching { repository.pushOrderStatus(changed.id.toString(), changed.status) }
                     }
@@ -455,22 +453,23 @@ class MerchantViewModel(
         }
     }
 
-    fun advanceOrderStatus(tableLabel: String, time: String) {
+    fun advanceOrderStatus(orderId: Int) {
         val nextState = _uiState.value.let { state ->
             val updated = state.orders.map { order ->
-                if (order.tableLabel == tableLabel && order.time == time) {
+                if (order.id == orderId) {
                     order.copy(status = nextOrderStatus(order.status))
                 } else {
                     order
                 }
             }
+            val target = updated.firstOrNull { it.id == orderId }
             state.copy(
                 orders = updated,
-                noticeMessage = "已更新 $tableLabel 的订单状态"
+                noticeMessage = "已更新 ${target?.tableLabel ?: ""} 的订单状态"
             )
         }
         _uiState.value = nextState
-        val targetOrder = nextState.orders.firstOrNull { it.tableLabel == tableLabel && it.time == time } ?: return
+        val targetOrder = nextState.orders.firstOrNull { it.id == orderId } ?: return
         if (targetOrder.id > 0) {
             viewModelScope.launch(Dispatchers.IO) {
                 runCatching { repository.pushOrderStatus(targetOrder.id.toString(), targetOrder.status) }
