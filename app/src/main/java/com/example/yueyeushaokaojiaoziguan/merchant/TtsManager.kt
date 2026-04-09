@@ -1,41 +1,65 @@
 package com.example.yueyeushaokaojiaoziguan.merchant
 
 import android.content.Context
-import android.speech.tts.TextToSpeech
-import java.util.Locale
+import android.media.AudioAttributes
+import android.media.MediaPlayer
+import kotlinx.coroutines.*
+import java.net.URLEncoder
 
 object TtsManager {
-    private var tts: TextToSpeech? = null
-    private var ready = false
-    private val pendingQueue = mutableListOf<String>()
+    private var player: MediaPlayer? = null
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val queue = ArrayDeque<String>()
+    private var playing = false
 
-    fun init(context: Context) {
-        if (tts != null) return
-        tts = TextToSpeech(context.applicationContext) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.CHINESE
-                tts?.setSpeechRate(0.85f)   // 稍慢一点，更清晰
-                tts?.setPitch(1.15f)        // 稍高一点，更活泼
-                ready = true
-                synchronized(pendingQueue) {
-                    pendingQueue.forEach { speak(it) }
-                    pendingQueue.clear()
+    fun init(context: Context) {}
+
+    fun speak(text: String) {
+        synchronized(queue) { queue.addLast(text) }
+        playNext()
+    }
+
+    private fun playNext() {
+        synchronized(queue) {
+            if (playing || queue.isEmpty()) return
+            playing = true
+        }
+        val text = synchronized(queue) { queue.removeFirst() }
+        scope.launch {
+            try {
+                val encoded = URLEncoder.encode(text, "UTF-8")
+                val url = "${MerchantApiConfig.baseApiUrl}/merchant/tts?text=$encoded"
+                withContext(Dispatchers.Main) {
+                    player?.release()
+                    player = MediaPlayer().apply {
+                        setAudioAttributes(AudioAttributes.Builder()
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .build())
+                        setDataSource(url)
+                        setOnPreparedListener { it.start() }
+                        setOnCompletionListener {
+                            synchronized(queue) { playing = false }
+                            playNext()
+                        }
+                        setOnErrorListener { _, _, _ ->
+                            synchronized(queue) { playing = false }
+                            playNext()
+                            true
+                        }
+                        prepareAsync()
+                    }
                 }
+            } catch (_: Exception) {
+                synchronized(queue) { playing = false }
+                playNext()
             }
         }
     }
 
-    fun speak(text: String) {
-        if (ready) {
-            tts?.speak(text, TextToSpeech.QUEUE_ADD, null, System.currentTimeMillis().toString())
-        } else {
-            synchronized(pendingQueue) { pendingQueue.add(text) }
-        }
-    }
-
     fun shutdown() {
-        tts?.shutdown()
-        tts = null
-        ready = false
+        scope.cancel()
+        player?.release()
+        player = null
     }
 }
