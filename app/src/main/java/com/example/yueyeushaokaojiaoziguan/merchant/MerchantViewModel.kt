@@ -474,6 +474,9 @@ class MerchantViewModel(
         if (targetOrder.id > 0) {
             viewModelScope.launch(Dispatchers.IO) {
                 runCatching { repository.pushOrderStatus(targetOrder.id.toString(), targetOrder.status) }
+                    .onSuccess {
+                        if (targetOrder.status == "已完成") fetchMerchantData(initialLoad = false)
+                    }
                     .onFailure {
                         _uiState.value = _uiState.value.copy(
                             errorMessage = "订单已本地更新，但同步后端失败：${it.message ?: "请稍后重试"}"
