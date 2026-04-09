@@ -133,20 +133,12 @@ fun HomeWorkbenchScreen(
                     contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    itemsIndexed(pageOrders, key = { _, it -> "${it.id}_${it.tableLabel}_${it.time}" }) { index, order ->
-                        // 滑入动画
-                        val visible = remember { mutableStateOf(false) }
-                        LaunchedEffect(Unit) { visible.value = true }
-                        AnimatedVisibility(
-                            visible.value,
-                            enter = slideInHorizontally(tween(300, delayMillis = index * 50)) { it / 3 } + fadeIn(tween(300, delayMillis = index * 50))
-                        ) {
-                            OrderWorkCard(order, pageTab, expandedOrder == (order.tableLabel + order.time),
-                                { expandedOrder = if (expandedOrder == (order.tableLabel + order.time)) null else (order.tableLabel + order.time) },
-                                { onAdvanceOrder(order.tableLabel, order.time) },
-                                { dishName -> onToggleDishServed(order.tableLabel, order.time, dishName) }
-                            )
-                        }
+                    itemsIndexed(pageOrders, key = { _, it -> "${it.id}_${it.tableLabel}_${it.time}" }) { _, order ->
+                        OrderWorkCard(order, pageTab, expandedOrder == (order.tableLabel + order.time),
+                            { expandedOrder = if (expandedOrder == (order.tableLabel + order.time)) null else (order.tableLabel + order.time) },
+                            { onAdvanceOrder(order.tableLabel, order.time) },
+                            { dishName -> onToggleDishServed(order.tableLabel, order.time, dishName) }
+                        )
                     }
                 }
                 }
