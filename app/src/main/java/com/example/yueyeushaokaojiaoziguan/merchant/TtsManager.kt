@@ -14,6 +14,8 @@ object TtsManager {
         tts = TextToSpeech(context.applicationContext) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 tts?.language = Locale.CHINESE
+                tts?.setSpeechRate(0.85f)   // 稍慢一点，更清晰
+                tts?.setPitch(1.15f)        // 稍高一点，更活泼
                 ready = true
                 synchronized(pendingQueue) {
                     pendingQueue.forEach { speak(it) }

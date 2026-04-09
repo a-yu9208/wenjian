@@ -59,15 +59,15 @@ class MerchantViewModel(
                                             "checkout" -> {
                                                 val msg = "${area} ${table} 的客人申请结账啦！"
                                                 _uiState.value = _uiState.value.copy(checkoutAlert = msg)
-                                                TtsManager.speak("${area}${table}申请结账")
+                                                TtsManager.speak("叮咚，${area}${table}的客人要结账啦")
                                             }
                                             "new_order" -> {
                                                 _uiState.value = _uiState.value.copy(checkoutAlert = "${area} ${table} 有新订单！")
-                                                TtsManager.speak("${area}${table}客人下单啦")
+                                                TtsManager.speak("叮咚，${area}${table}来新单啦")
                                             }
                                             "append_order" -> {
                                                 _uiState.value = _uiState.value.copy(checkoutAlert = "${area} ${table} 加单啦！")
-                                                TtsManager.speak("${area}${table}客人加单啦")
+                                                TtsManager.speak("叮咚，${area}${table}的客人又加单啦")
                                             }
                                         }
                                     } catch (_: Exception) {}
