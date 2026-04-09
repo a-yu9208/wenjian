@@ -41,6 +41,7 @@ import com.example.yueyeushaokaojiaoziguan.ui.theme.YueyeushaokaojiaoziguanTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        TtsManager.init(this)
         enableEdgeToEdge()
         setContent {
             YueyeushaokaojiaoziguanTheme(dynamicColor = false) {
@@ -49,6 +50,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        TtsManager.shutdown()
     }
 }
 

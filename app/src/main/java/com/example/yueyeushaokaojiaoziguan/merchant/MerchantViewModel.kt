@@ -50,13 +50,21 @@ class MerchantViewModel(
                                 val payload = line.removePrefix("data:").trim()
                                 withContext(Dispatchers.Main) {
                                     fetchMerchantData(initialLoad = false)
-                                    // 解析 checkout 事件
                                     try {
                                         val json = org.json.JSONObject(payload)
-                                        if (json.optString("type") == "checkout") {
-                                            val area = json.optString("area")
-                                            val table = json.optString("table")
-                                            _uiState.value = _uiState.value.copy(checkoutAlert = "${area} ${table} 的客人申请结账啦！")
+                                        val type = json.optString("type")
+                                        val area = json.optString("area")
+                                        val table = json.optString("table")
+                                        when (type) {
+                                            "checkout" -> {
+                                                val msg = "${area} ${table} 的客人申请结账啦！"
+                                                _uiState.value = _uiState.value.copy(checkoutAlert = msg)
+                                                TtsManager.speak("${area}${table}申请结账")
+                                            }
+                                            "new_order" -> {
+                                                _uiState.value = _uiState.value.copy(checkoutAlert = "${area} ${table} 有新订单！")
+                                                TtsManager.speak("${area}${table}客人下单啦")
+                                            }
                                         }
                                     } catch (_: Exception) {}
                                 }
