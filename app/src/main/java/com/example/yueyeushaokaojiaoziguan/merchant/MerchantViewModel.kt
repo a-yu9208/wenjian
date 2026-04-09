@@ -19,6 +19,7 @@ class MerchantViewModel(
     private val _uiState = MutableStateFlow(MerchantUiState())
     val uiState: StateFlow<MerchantUiState> = _uiState.asStateFlow()
     private var sseJob: Job? = null
+    private var fetchJob: Job? = null
 
     init {
         loadMerchantData()
@@ -49,7 +50,6 @@ class MerchantViewModel(
                             if (line.startsWith("data:")) {
                                 val payload = line.removePrefix("data:").trim()
                                 withContext(Dispatchers.Main) {
-                                    fetchMerchantData(initialLoad = false)
                                     try {
                                         val json = org.json.JSONObject(payload)
                                         val type = json.optString("type")
@@ -67,6 +67,7 @@ class MerchantViewModel(
                                             }
                                         }
                                     } catch (_: Exception) {}
+                                    fetchMerchantData(initialLoad = false)
                                 }
                             }
                         }
@@ -255,13 +256,15 @@ class MerchantViewModel(
             return
         }
 
+        val newCats = (_uiState.value.categories + draft).distinct()
         _uiState.value = _uiState.value.copy(
-            categories = (_uiState.value.categories + draft).distinct(),
+            categories = newCats,
             categoryDraft = "",
             dishDraft = _uiState.value.dishDraft.copy(category = draft),
             noticeMessage = "已新增分类：$draft",
             errorMessage = null
         )
+        syncCategoryOrder(newCats)
     }
 
     fun removeCategory(category: String) {
@@ -292,6 +295,11 @@ class MerchantViewModel(
             noticeMessage = "已删除分类：$normalized，原分类菜品已归到 $fallback",
             errorMessage = null
         )
+        syncCategoryOrder(nextCategories)
+        val movedNames = _uiState.value.dishes.filter { it.category == normalized }.map { it.name }.toSet()
+        if (movedNames.isNotEmpty()) {
+            batchUpdateCategory(movedNames, fallback)
+        }
     }
 
     fun moveCategoryUp(category: String) {
@@ -708,7 +716,8 @@ class MerchantViewModel(
     }
 
     private fun fetchMerchantData(initialLoad: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
+        if (fetchJob?.isActive == true && !initialLoad) return
+        fetchJob = viewModelScope.launch(Dispatchers.IO) {
             val currentState = _uiState.value
             _uiState.value = currentState.copy(
                 loading = initialLoad,

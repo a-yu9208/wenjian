@@ -154,7 +154,7 @@ private fun ShaokaoMerchantApp() {
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = innerPadding.calculateTopPadding())
             ) {
                 uiState.checkoutAlert?.let { msg ->
-                    LaunchedEffect(msg) { kotlinx.coroutines.delay(5000L); vm.dismissCheckoutAlert() }
+                    LaunchedEffect(msg) { kotlinx.coroutines.delay(10000L); vm.dismissCheckoutAlert() }
                     Card(
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFFF6B35)),
                         shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),

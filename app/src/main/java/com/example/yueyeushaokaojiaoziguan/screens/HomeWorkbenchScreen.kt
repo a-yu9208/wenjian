@@ -131,7 +131,7 @@ fun HomeWorkbenchScreen(
                     contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    itemsIndexed(pageOrders, key = { _, it -> it.tableLabel + it.time }) { index, order ->
+                    itemsIndexed(pageOrders, key = { _, it -> "${it.id}_${it.tableLabel}_${it.time}" }) { index, order ->
                         // 滑入动画
                         val visible = remember { mutableStateOf(false) }
                         LaunchedEffect(Unit) { visible.value = true }
