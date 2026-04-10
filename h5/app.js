@@ -429,8 +429,16 @@ async function notifyMerchant() {
   if (phone && !/^1\d{10}$/.test(phone)) { showToast('手机号格式不对'); return; }
   if (phone) localStorage.setItem('userPhone', phone);
 
-  // 调后端结账
+  // 调后端结账，先过滤掉已完成/已结账的旧订单
+  const validIds = [];
   for (const oid of serverOrderIds) {
+    try {
+      const r = await fetch(`${API_BASE}/customer/order-status?orderId=${oid}`);
+      const j = await r.json();
+      if (j.success && j.data && !['已完成','待结账'].includes(j.data.status)) validIds.push(oid);
+    } catch (e) { validIds.push(oid); }
+  }
+  for (const oid of validIds) {
     try {
       const params = new URLSearchParams({ orderId: oid, phone, usePoints: usePoints ? 'true' : 'false' });
       const res = await fetch(`${API_BASE}/customer/checkout?${params}`, { method: 'POST' });
