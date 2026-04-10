@@ -52,6 +52,8 @@ class MainActivity : ComponentActivity() {
 
     private var showPermissionDialog = mutableStateOf(false)
 
+    private var initialTab = mutableStateOf<String?>(null)
+
     private val notifLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (!granted) showPermissionDialog.value = true
         startSseService()
@@ -60,15 +62,21 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         TtsManager.init(this)
+        initialTab.value = intent?.getStringExtra("navigate_tab")
         requestNotificationPermission()
         enableEdgeToEdge()
         setContent {
             YueyeushaokaojiaoziguanTheme(dynamicColor = false) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    ShaokaoMerchantApp(showPermissionDialog)
+                    ShaokaoMerchantApp(showPermissionDialog, initialTab)
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.getStringExtra("navigate_tab")?.let { initialTab.value = it }
     }
 
     private fun requestNotificationPermission() {
@@ -100,9 +108,17 @@ private val tabInfoMap = mapOf(
 )
 
 @Composable
-private fun ShaokaoMerchantApp(showPermissionDialog: MutableState<Boolean> = mutableStateOf(false)) {
+private fun ShaokaoMerchantApp(showPermissionDialog: MutableState<Boolean> = mutableStateOf(false), initialTab: MutableState<String?> = mutableStateOf(null)) {
     var currentTabName by rememberSaveable { mutableStateOf(MerchantTab.Home.name) }
     val currentTab = MerchantTab.entries.find { it.name == currentTabName } ?: MerchantTab.Home
+
+    // 从通知点击跳转
+    LaunchedEffect(initialTab.value) {
+        initialTab.value?.let { tab ->
+            MerchantTab.entries.find { it.name == tab }?.let { currentTabName = it.name }
+            initialTab.value = null
+        }
+    }
     val vm: MerchantViewModel = viewModel(factory = MerchantViewModelFactory(MerchantAppContainer.repository))
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
