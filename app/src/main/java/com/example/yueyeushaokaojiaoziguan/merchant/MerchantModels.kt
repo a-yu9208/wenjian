@@ -111,7 +111,8 @@ data class DishDraft(
 
 data class PointsConfig(
     val earnRate: Int = 1,       // 消费1元得N积分
-    val deductRate: Int = 10     // N积分抵1元
+    val deductRate: Int = 10,    // N积分抵1元
+    val maxDeductPercent: Int = 50  // 每单最多抵扣订单金额的百分比
 )
 
 data class PointsLog(

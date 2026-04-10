@@ -331,7 +331,7 @@ function goBill() {
   html += `<div class="bill-row"><span>餐具费 x${utensils}</span><span>¥${utensilTotal}</span></div>`;
   // 手机号输入 + 查询积分
   html += `<div class="phone-input-wrap">
-    <input type="tel" id="checkoutPhone" class="phone-input" placeholder="输入手机号查询积分并获得积分（选填）" maxlength="11"
+    <input type="tel" id="checkoutPhone" class="phone-input" placeholder="输入手机号获得积分（选填）" maxlength="11"
       value="${localStorage.getItem('userPhone') || ''}" oninput="onPhoneInput(this.value)">
   </div>`;
   html += `<div id="pointsSection"></div>`;
@@ -377,15 +377,27 @@ async function fetchBillPoints(phone) {
       const pts = json.data.points || 0;
       MOCK._billPoints = pts;
       MOCK.user.points = pts;
-      const maxDeduct = Math.floor(pts / MOCK.pointsRate.deduct);
-      if (pts > 0) {
-        sec.innerHTML = `<div class="points-toggle">
-          <input type="checkbox" id="usePoints" ${usePoints ? 'checked' : ''} onchange="usePoints=this.checked;updateBillTotal()">
-          <label for="usePoints">使用${pts}积分抵扣¥${maxDeduct}</label>
-        </div>`;
-      } else {
-        sec.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0">该手机号暂无可用积分</div>';
+      // 从后端获取积分规则
+      if (json.data.pointsConfig) {
+        MOCK.pointsRate.deduct = json.data.pointsConfig.deductRate || 10;
+        MOCK.pointsRate.earn = json.data.pointsConfig.earnRate || 1;
+        MOCK.pointsRate.maxDeductPercent = json.data.pointsConfig.maxDeductPercent || 50;
       }
+      const base = MOCK._billSubtotal || 0;
+      const maxByPercent = Math.floor(base * (MOCK.pointsRate.maxDeductPercent || 50) / 100);
+      const maxByPoints = Math.floor(pts / MOCK.pointsRate.deduct);
+      const maxDeduct = Math.min(maxByPoints, maxByPercent);
+      if (pts > 0 && maxDeduct > 0) {
+        sec.innerHTML = `<div class="points-toggle">
+          <input type="checkbox" id="usePoints" onchange="usePoints=this.checked;updateBillTotal()">
+          <label for="usePoints">使用积分抵扣¥${maxDeduct}（当前${pts}积分，每单最多抵${MOCK.pointsRate.maxDeductPercent}%）</label>
+        </div>`;
+      } else if (pts > 0) {
+        sec.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0">当前有' + pts + '积分，本单暂不可抵扣</div>';
+      } else {
+        sec.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0">该手机号暂无可用积分，结账后可获得积分</div>';
+      }
+      usePoints = false;
       updateBillTotal();
     } else {
       sec.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0">积分查询失败</div>';
@@ -400,9 +412,15 @@ function updateBillTotal() {
   if (!el) return;
   const base = MOCK._billSubtotal || 0;
   const pts = MOCK._billPoints || 0;
-  const maxDeduct = Math.floor(pts / MOCK.pointsRate.deduct);
+  const maxByPercent = Math.floor(base * (MOCK.pointsRate.maxDeductPercent || 50) / 100);
+  const maxByPoints = Math.floor(pts / MOCK.pointsRate.deduct);
+  const maxDeduct = Math.min(maxByPoints, maxByPercent);
   const deduct = usePoints ? maxDeduct : 0;
-  el.innerHTML = `<span>应付</span><span>¥${base - deduct}</span>`;
+  const final = Math.max(0, base - deduct);
+  el.innerHTML = `<span>应付</span><span>¥${final}</span>`;
+  if (deduct > 0) {
+    el.innerHTML += `<div style="font-size:12px;color:var(--brand)">积分抵扣 -¥${deduct}</div>`;
+  }
 }
 
 async function notifyMerchant() {
@@ -414,12 +432,13 @@ async function notifyMerchant() {
   // 调后端结账
   for (const oid of serverOrderIds) {
     try {
-      const res = await fetch(`${API_BASE}/customer/checkout?orderId=${oid}&phone=${encodeURIComponent(phone)}`, { method: 'POST' });
+      const params = new URLSearchParams({ orderId: oid, phone, usePoints: usePoints ? 'true' : 'false' });
+      const res = await fetch(`${API_BASE}/customer/checkout?${params}`, { method: 'POST' });
       const json = await res.json();
-      if (json.success && json.data && json.data.pointsEarned > 0) {
-        showToast(`获得 ${json.data.pointsEarned} 积分，总积分 ${json.data.totalPoints}`);
-        MOCK.user.points = json.data.totalPoints;
-        if (phone) MOCK.user.phone = phone;
+      if (json.success && json.data) {
+        if (json.data.pointsUsed > 0) {
+          showToast(`已使用${json.data.pointsUsed}积分抵扣¥${json.data.deductAmount}`);
+        }
       }
     } catch (e) {}
   }

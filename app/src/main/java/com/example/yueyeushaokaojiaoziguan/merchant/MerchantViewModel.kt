@@ -24,6 +24,7 @@ class MerchantViewModel(
     init {
         loadMerchantData()
         startSseListener()
+        loadPointsConfig()
     }
 
     fun loadMerchantData() {
@@ -59,15 +60,15 @@ class MerchantViewModel(
                                             "checkout" -> {
                                                 val msg = "${area} ${table} 的客人申请结账啦！"
                                                 _uiState.value = _uiState.value.copy(checkoutAlert = msg)
-                                                TtsManager.speak("叮咚，${area}${table}的客人要结账啦")
+                                                TtsManager.speak("老板，${area}${table}的客人要结账啦")
                                             }
                                             "new_order" -> {
                                                 _uiState.value = _uiState.value.copy(checkoutAlert = "${area} ${table} 有新订单！")
-                                                TtsManager.speak("叮咚，${area}${table}来新单啦")
+                                                TtsManager.speak("老板，${area}${table}来新单啦")
                                             }
                                             "append_order" -> {
                                                 _uiState.value = _uiState.value.copy(checkoutAlert = "${area} ${table} 加单啦！")
-                                                TtsManager.speak("叮咚，${area}${table}的客人又加单啦")
+                                                TtsManager.speak("老板，${area}${table}的客人又加单啦")
                                             }
                                         }
                                     } catch (_: Exception) {}
@@ -592,15 +593,58 @@ class MerchantViewModel(
         }
     }
 
-    fun updatePointsConfig(earnRate: Int? = null, deductRate: Int? = null) {
+    fun updatePointsConfig(earnRate: Int? = null, deductRate: Int? = null, maxDeductPercent: Int? = null) {
         val current = _uiState.value.pointsConfig
-        _uiState.value = _uiState.value.copy(
-            pointsConfig = current.copy(
-                earnRate = earnRate ?: current.earnRate,
-                deductRate = deductRate ?: current.deductRate
-            ),
-            noticeMessage = "积分规则已更新"
+        val newConfig = current.copy(
+            earnRate = earnRate ?: current.earnRate,
+            deductRate = deductRate ?: current.deductRate,
+            maxDeductPercent = maxDeductPercent ?: current.maxDeductPercent
         )
+        _uiState.value = _uiState.value.copy(pointsConfig = newConfig)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val url = java.net.URL("${MerchantApiConfig.baseApiUrl}/merchant/points/config")
+                val conn = url.openConnection() as java.net.HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.doOutput = true
+                conn.outputStream.write(org.json.JSONObject().apply {
+                    put("earnRate", newConfig.earnRate)
+                    put("deductRate", newConfig.deductRate)
+                    put("maxDeductPercent", newConfig.maxDeductPercent)
+                }.toString().toByteArray())
+                conn.inputStream.bufferedReader().readText()
+                withContext(Dispatchers.Main) {
+                    _uiState.value = _uiState.value.copy(noticeMessage = "积分规则已保存")
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _uiState.value = _uiState.value.copy(errorMessage = "积分规则保存失败：${e.message}")
+                }
+            }
+        }
+    }
+
+    fun loadPointsConfig() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val url = java.net.URL("${MerchantApiConfig.baseApiUrl}/merchant/points/config")
+                val text = url.readText()
+                val json = org.json.JSONObject(text)
+                if (json.optBoolean("success")) {
+                    val data = json.getJSONObject("data")
+                    withContext(Dispatchers.Main) {
+                        _uiState.value = _uiState.value.copy(
+                            pointsConfig = PointsConfig(
+                                earnRate = data.optInt("earnRate", 1),
+                                deductRate = data.optInt("deductRate", 10),
+                                maxDeductPercent = data.optInt("maxDeductPercent", 50)
+                            )
+                        )
+                    }
+                }
+            } catch (_: Exception) {}
+        }
     }
 
     fun queryRevenue(start: String, end: String, onResult: (Double, Int) -> Unit) {

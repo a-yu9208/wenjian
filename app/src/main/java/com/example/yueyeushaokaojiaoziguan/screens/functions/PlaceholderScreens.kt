@@ -157,6 +157,7 @@ private fun PointsAdjustTab(uiState: MerchantUiState, vm: MerchantViewModel) {
 private fun PointsRuleTab(uiState: MerchantUiState, vm: MerchantViewModel) {
     var earnInput by remember { mutableStateOf(uiState.pointsConfig.earnRate.toString()) }
     var deductInput by remember { mutableStateOf(uiState.pointsConfig.deductRate.toString()) }
+    var maxDeductInput by remember { mutableStateOf(uiState.pointsConfig.maxDeductPercent.toString()) }
 
     Column(Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)), shape = RoundedCornerShape(16.dp)) {
@@ -169,7 +170,9 @@ private fun PointsRuleTab(uiState: MerchantUiState, vm: MerchantViewModel) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
         OutlinedTextField(value = deductInput, onValueChange = { deductInput = it.filter(Char::isDigit) }, label = { Text("N积分抵扣1元") }, singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-        FilledTonalButton(onClick = { vm.updatePointsConfig(earnRate = earnInput.toIntOrNull() ?: 1, deductRate = deductInput.toIntOrNull() ?: 10) }, modifier = Modifier.fillMaxWidth()) { Text("保存规则") }
+        OutlinedTextField(value = maxDeductInput, onValueChange = { maxDeductInput = it.filter(Char::isDigit) }, label = { Text("每单最多抵扣百分比（0-100）") }, singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+        FilledTonalButton(onClick = { vm.updatePointsConfig(earnRate = earnInput.toIntOrNull() ?: 1, deductRate = deductInput.toIntOrNull() ?: 10, maxDeductPercent = maxDeductInput.toIntOrNull() ?: 50) }, modifier = Modifier.fillMaxWidth()) { Text("保存规则") }
 
         Spacer(Modifier.height(8.dp))
         Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(12.dp)) {
@@ -177,6 +180,7 @@ private fun PointsRuleTab(uiState: MerchantUiState, vm: MerchantViewModel) {
                 Text("当前规则", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 Text("消费 1 元得 ${uiState.pointsConfig.earnRate} 积分", fontSize = 14.sp)
                 Text("${uiState.pointsConfig.deductRate} 积分抵扣 1 元", fontSize = 14.sp)
+                Text("每单最多抵扣 ${uiState.pointsConfig.maxDeductPercent}%", fontSize = 14.sp)
             }
         }
     }
@@ -213,6 +217,7 @@ fun ProfileScreen(uiState: MerchantUiState, vm: MerchantViewModel) {
                     Text("积分规则概览", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Text("消费 1 元得 ${uiState.pointsConfig.earnRate} 积分", fontSize = 14.sp)
                     Text("${uiState.pointsConfig.deductRate} 积分抵扣 1 元", fontSize = 14.sp)
+                    Text("每单最多抵扣 ${uiState.pointsConfig.maxDeductPercent}%", fontSize = 14.sp)
                 }
             }
         }
