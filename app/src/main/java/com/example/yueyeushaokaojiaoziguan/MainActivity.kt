@@ -1,14 +1,18 @@
 package com.example.yueyeushaokaojiaoziguan
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -36,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.yueyeushaokaojiaoziguan.merchant.*
@@ -44,25 +49,45 @@ import com.example.yueyeushaokaojiaoziguan.ui.theme.GradientOrange
 import com.example.yueyeushaokaojiaoziguan.ui.theme.YueyeushaokaojiaoziguanTheme
 
 class MainActivity : ComponentActivity() {
+
+    private var showPermissionDialog = mutableStateOf(false)
+
+    private val notifLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (!granted) showPermissionDialog.value = true
+        startSseService()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         TtsManager.init(this)
-        // 启动前台服务
-        val sseIntent = Intent(this, SseService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(sseIntent) else startService(sseIntent)
+        requestNotificationPermission()
         enableEdgeToEdge()
         setContent {
             YueyeushaokaojiaoziguanTheme(dynamicColor = false) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    ShaokaoMerchantApp()
+                    ShaokaoMerchantApp(showPermissionDialog)
                 }
             }
         }
     }
 
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                return
+            }
+        }
+        startSseService()
+    }
+
+    private fun startSseService() {
+        val intent = Intent(this, SseService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent) else startService(intent)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        // 不停止 Service，让它继续后台运行
     }
 }
 
@@ -75,7 +100,7 @@ private val tabInfoMap = mapOf(
 )
 
 @Composable
-private fun ShaokaoMerchantApp() {
+private fun ShaokaoMerchantApp(showPermissionDialog: MutableState<Boolean> = mutableStateOf(false)) {
     var currentTabName by rememberSaveable { mutableStateOf(MerchantTab.Home.name) }
     val currentTab = MerchantTab.entries.find { it.name == currentTabName } ?: MerchantTab.Home
     val vm: MerchantViewModel = viewModel(factory = MerchantViewModelFactory(MerchantAppContainer.repository))
@@ -85,6 +110,24 @@ private fun ShaokaoMerchantApp() {
     var downloading by remember { mutableStateOf(false) }
     var downloadProgress by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
+
+    // 权限引导弹窗
+    if (showPermissionDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog.value = false },
+            title = { Text("需要通知权限", fontWeight = FontWeight.Bold) },
+            text = { Text("开启通知权限后，APP在后台也能语音播报新订单和结账提醒。\n\n请前往：设置 → 应用 → 月月烧烤 → 通知 → 开启") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showPermissionDialog.value = false
+                    context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    })
+                }) { Text("去设置") }
+            },
+            dismissButton = { TextButton(onClick = { showPermissionDialog.value = false }) { Text("稍后再说") } }
+        )
+    }
 
     // 接收 SseService 的广播
     DisposableEffect(vm) {
