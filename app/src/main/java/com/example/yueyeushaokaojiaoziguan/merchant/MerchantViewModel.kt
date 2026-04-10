@@ -18,12 +18,10 @@ class MerchantViewModel(
 
     private val _uiState = MutableStateFlow(MerchantUiState())
     val uiState: StateFlow<MerchantUiState> = _uiState.asStateFlow()
-    private var sseJob: Job? = null
     private var fetchJob: Job? = null
 
     init {
         loadMerchantData()
-        startSseListener()
         loadPointsConfig()
     }
 
@@ -35,59 +33,15 @@ class MerchantViewModel(
         fetchMerchantData(initialLoad = false)
     }
 
-    private fun startSseListener() {
-        sseJob?.cancel()
-        sseJob = viewModelScope.launch(Dispatchers.IO) {
-            while (isActive) {
-                try {
-                    val url = java.net.URL("${MerchantApiConfig.baseApiUrl}/merchant/events")
-                    val conn = url.openConnection() as java.net.HttpURLConnection
-                    conn.connectTimeout = 10000
-                    conn.readTimeout = 0  // 无超时，保持长连接
-                    conn.setRequestProperty("Accept", "text/event-stream")
-                    conn.inputStream.bufferedReader().use { reader ->
-                        while (isActive) {
-                            val line = reader.readLine() ?: break
-                            if (line.startsWith("data:")) {
-                                val payload = line.removePrefix("data:").trim()
-                                withContext(Dispatchers.Main) {
-                                    try {
-                                        val json = org.json.JSONObject(payload)
-                                        val type = json.optString("type")
-                                        val area = json.optString("area")
-                                        val table = json.optString("table")
-                                        when (type) {
-                                            "checkout" -> {
-                                                val msg = "${area} ${table} 的客人申请结账啦！"
-                                                _uiState.value = _uiState.value.copy(checkoutAlert = msg)
-                                                TtsManager.speak("老板，${area}${table}的客人要结账啦")
-                                            }
-                                            "new_order" -> {
-                                                _uiState.value = _uiState.value.copy(checkoutAlert = "${area} ${table} 有新订单！")
-                                                TtsManager.speak("老板，${area}${table}来新单啦")
-                                            }
-                                            "append_order" -> {
-                                                _uiState.value = _uiState.value.copy(checkoutAlert = "${area} ${table} 加单啦！")
-                                                TtsManager.speak("老板，${area}${table}的客人又加单啦")
-                                            }
-                                        }
-                                    } catch (_: Exception) {}
-                                    fetchMerchantData(initialLoad = false)
-                                }
-                            }
-                        }
-                    }
-                } catch (_: Exception) {
-                    // 连接断开，等 3 秒重连
-                }
-                kotlinx.coroutines.delay(3000L)
-            }
-        }
+    /** Called from broadcast receiver when SSE event arrives */
+    fun onSseAlert(alert: String) {
+        _uiState.value = _uiState.value.copy(checkoutAlert = alert)
+        fetchMerchantData(initialLoad = false)
     }
 
     override fun onCleared() {
         super.onCleared()
-        sseJob?.cancel()
+    }
     }
 
     fun updateQrDraft(

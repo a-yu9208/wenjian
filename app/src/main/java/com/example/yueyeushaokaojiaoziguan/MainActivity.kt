@@ -1,5 +1,10 @@
 package com.example.yueyeushaokaojiaoziguan
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -42,6 +47,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         TtsManager.init(this)
+        // 启动前台服务
+        val sseIntent = Intent(this, SseService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(sseIntent) else startService(sseIntent)
         enableEdgeToEdge()
         setContent {
             YueyeushaokaojiaoziguanTheme(dynamicColor = false) {
@@ -54,7 +62,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        TtsManager.shutdown()
+        // 不停止 Service，让它继续后台运行
     }
 }
 
@@ -77,6 +85,22 @@ private fun ShaokaoMerchantApp() {
     var downloading by remember { mutableStateOf(false) }
     var downloadProgress by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
+
+    // 接收 SseService 的广播
+    DisposableEffect(vm) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                intent?.getStringExtra("alert")?.let { vm.onSseAlert(it) }
+            }
+        }
+        val filter = IntentFilter("com.shaokao.SSE_EVENT")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            context.registerReceiver(receiver, filter)
+        }
+        onDispose { context.unregisterReceiver(receiver) }
+    }
 
     // 启动时检查更新
     LaunchedEffect(Unit) {
