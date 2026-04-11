@@ -42,7 +42,6 @@ class MerchantViewModel(
     override fun onCleared() {
         super.onCleared()
     }
-    }
 
     fun updateQrDraft(
         section: String? = null,
