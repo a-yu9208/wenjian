@@ -24,5 +24,7 @@ data class MerchantUiState(
     val pointsUsers: List<PointsUser> = emptyList(),
     val checkoutAlert: String? = null,
     val pendingUpdate: UpdateInfo? = null,
-    val profile: MerchantProfile = MerchantProfile()
+    val profile: MerchantProfile = MerchantProfile(),
+    val paymentQr: PaymentQrConfig = PaymentQrConfig(),
+    val checkoutDialogOrder: OrderItem? = null
 )

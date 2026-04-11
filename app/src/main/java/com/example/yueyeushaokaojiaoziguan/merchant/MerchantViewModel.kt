@@ -23,6 +23,7 @@ class MerchantViewModel(
     init {
         loadMerchantData()
         loadPointsConfig()
+        loadPaymentQr()
     }
 
     fun loadMerchantData() {
@@ -85,6 +86,82 @@ class MerchantViewModel(
 
     fun dismissUpdate() {
         _uiState.value = _uiState.value.copy(pendingUpdate = null)
+    }
+
+    fun login(username: String, password: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = runCatching {
+                val httpClient = MerchantHttpClient()
+                val body = """{"username":"$username","password":"$password"}"""
+                when (val res = httpClient.post(MerchantApiConfig.loginPath, body)) {
+                    is MerchantApiResult.Success -> {
+                        val json = org.json.JSONObject(res.data)
+                        if (json.optBoolean("success")) {
+                            val token = json.optJSONObject("data")?.optString("token") ?: ""
+                            Pair(true, token)
+                        } else Pair(false, json.optString("error", "登录失败"))
+                    }
+                    is MerchantApiResult.Error -> Pair(false, res.message)
+                }
+            }.getOrElse { Pair(false, "网络错误：${it.message}") }
+            withContext(Dispatchers.Main) { onResult(result.first, result.second) }
+        }
+    }
+
+    fun loadPaymentQr() {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val httpClient = MerchantHttpClient()
+                when (val res = httpClient.get(MerchantApiConfig.paymentQrPath)) {
+                    is MerchantApiResult.Success -> {
+                        val json = org.json.JSONObject(res.data)
+                        val data = json.optJSONObject("data")
+                        if (data != null) {
+                            withContext(Dispatchers.Main) {
+                                _uiState.value = _uiState.value.copy(
+                                    paymentQr = PaymentQrConfig(
+                                        wechat = data.optString("wechat"),
+                                        alipay = data.optString("alipay")
+                                    )
+                                )
+                            }
+                        }
+                    }
+                    is MerchantApiResult.Error -> {}
+                }
+            }
+        }
+    }
+
+    fun savePaymentQr(wechat: String? = null, alipay: String? = null) {
+        val current = _uiState.value.paymentQr
+        val updated = current.copy(
+            wechat = wechat ?: current.wechat,
+            alipay = alipay ?: current.alipay
+        )
+        _uiState.value = _uiState.value.copy(paymentQr = updated)
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val httpClient = MerchantHttpClient()
+                val body = org.json.JSONObject().apply {
+                    if (wechat != null) put("wechat", wechat)
+                    if (alipay != null) put("alipay", alipay)
+                }.toString()
+                httpClient.post(MerchantApiConfig.paymentQrPath, body)
+            }.onSuccess {
+                withContext(Dispatchers.Main) {
+                    _uiState.value = _uiState.value.copy(noticeMessage = "收款码已保存")
+                }
+            }
+        }
+    }
+
+    fun showCheckoutDialog(order: OrderItem) {
+        _uiState.value = _uiState.value.copy(checkoutDialogOrder = order)
+    }
+
+    fun dismissCheckoutDialog() {
+        _uiState.value = _uiState.value.copy(checkoutDialogOrder = null)
     }
 
     fun sendAiMessage(message: String, onResult: (String) -> Unit) {

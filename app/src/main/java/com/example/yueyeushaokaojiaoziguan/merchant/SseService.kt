@@ -55,10 +55,12 @@ class SseService : Service() {
             val type = json.optString("type")
             val area = json.optString("area")
             val table = json.optString("table")
+            val role = getSharedPreferences("shaokao_prefs", MODE_PRIVATE).getString("user_role", "Boss")
+            val prefix = if (role == "Staff") "注意" else "老板"
             val (alert, tts, tab) = when (type) {
-                "checkout" -> Triple("${area} ${table} 的客人申请结账啦！", "老板，${area}${table}的客人要结账啦", "Home")
-                "new_order" -> Triple("${area} ${table} 有新订单！", "老板，${area}${table}来新单啦", "Home")
-                "append_order" -> Triple("${area} ${table} 加单啦！", "老板，${area}${table}的客人又加单啦", "Home")
+                "checkout" -> Triple("${area} ${table} 的客人申请结账啦！", "${prefix}，${area}${table}的客人要结账啦", "Home")
+                "new_order" -> Triple("${area} ${table} 有新订单！", "${prefix}，${area}${table}来新单啦", "Home")
+                "append_order" -> Triple("${area} ${table} 加单啦！", "${prefix}，${area}${table}的客人又加单啦", "Home")
                 else -> return
             }
             TtsManager.speak(tts)

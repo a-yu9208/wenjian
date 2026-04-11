@@ -19,6 +19,7 @@ enum class FunctionEntry(val label: String, val icon: String, val desc: String) 
     CategorySetting("分类设置", "📂", "管理菜品分类"),
     TableManage("桌台管理", "🪑", "桌码与状态"),
     PointsActivity("积分活动", "🎁", "积分规则与流水"),
+    PaymentQr("收款码管理", "💰", "微信/支付宝收款码"),
     AiAssistant("烤烤助理", "🧚", "智能小助手对话"),
     Profile("个人信息", "👤", "店铺与账号")
 }
@@ -64,6 +65,8 @@ data class OrderItem(
     val tableLabel: String,
     val summary: String,
     val amount: String,
+    val originalAmount: String = "",
+    val pointsDeduct: String = "",
     val status: String,
     val time: String,
     val area: String = "",
@@ -132,4 +135,11 @@ data class MerchantProfile(
 data class PointsUser(
     val phone: String,
     val points: Int
+)
+
+enum class UserRole { Boss, Staff }
+
+data class PaymentQrConfig(
+    val wechat: String = "",
+    val alipay: String = ""
 )

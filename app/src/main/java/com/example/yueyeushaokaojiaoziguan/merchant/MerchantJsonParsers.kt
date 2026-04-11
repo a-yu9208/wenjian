@@ -74,6 +74,8 @@ object MerchantJsonParsers {
                         tableLabel = item.optString("tableLabel"),
                         summary = item.optString("summary"),
                         amount = item.optString("amount"),
+                        originalAmount = item.optString("originalAmount"),
+                        pointsDeduct = item.optString("pointsDeduct"),
                         status = item.optString("status"),
                         time = item.optString("time"),
                         area = item.optString("area"),

@@ -35,12 +35,13 @@ private val entryGradients = mapOf(
     FunctionEntry.CategorySetting to listOf(Color(0xFF7C4DFF), Color(0xFFB388FF)),
     FunctionEntry.TableManage to listOf(Color(0xFF00BCD4), Color(0xFF80DEEA)),
     FunctionEntry.PointsActivity to listOf(Color(0xFFFF9800), Color(0xFFFFCC02)),
+    FunctionEntry.PaymentQr to listOf(Color(0xFF43A047), Color(0xFF81C784)),
     FunctionEntry.AiAssistant to listOf(Color(0xFF2196F3), Color(0xFF64B5F6)),
     FunctionEntry.Profile to listOf(Color(0xFF607D8B), Color(0xFF90A4AE))
 )
 
 @Composable
-fun FunctionsScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier: Modifier = Modifier, resetTrigger: Int = 0) {
+fun FunctionsScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier: Modifier = Modifier, resetTrigger: Int = 0, onSwitchRole: () -> Unit = {}) {
     var activePageName by rememberSaveable { mutableStateOf<String?>(null) }
     val activePage = activePageName?.let { name -> FunctionEntry.entries.find { it.name == name } }
 
@@ -63,6 +64,12 @@ fun FunctionsScreen(uiState: MerchantUiState, vm: MerchantViewModel, modifier: M
                     enter = slideInHorizontally(tween(300, delayMillis = index * 60)) { it / 3 } + fadeIn(tween(300, delayMillis = index * 60))
                 ) {
                     FunctionCard(entry) { activePageName = entry.name }
+                }
+            }
+            item {
+                Spacer(Modifier.height(4.dp))
+                OutlinedButton(onClick = onSwitchRole, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                    Text("🔄 切换角色")
                 }
             }
         }
@@ -129,6 +136,7 @@ private fun FunctionSubPage(entry: FunctionEntry, uiState: MerchantUiState, vm: 
                 FunctionEntry.CategorySetting -> CategorySettingScreen(uiState, vm)
                 FunctionEntry.TableManage -> TableManageScreen(uiState, vm)
                 FunctionEntry.PointsActivity -> PointsActivityScreen(uiState, vm)
+                FunctionEntry.PaymentQr -> PaymentQrScreen(uiState, vm)
                 FunctionEntry.AiAssistant -> AiAssistantScreen(vm)
                 FunctionEntry.Profile -> ProfileScreen(uiState, vm)
             }

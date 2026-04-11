@@ -37,7 +37,8 @@ fun HomeWorkbenchScreen(
     onAdvanceOrder: (Int) -> Unit,
     onToggleDishServed: (Int, String) -> Unit,
     onRefresh: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCheckout: ((OrderItem) -> Unit)? = null
 ) {
     val subTabs = HomeSubTab.entries
     val pagerState = rememberPagerState(pageCount = { subTabs.size })
@@ -109,7 +110,15 @@ fun HomeWorkbenchScreen(
                             else {
                                 val allDishes = group.flatMap { it.dishes }
                                 val total = group.sumOf { it.amount.replace("¥", "").replace(",", "").toDoubleOrNull() ?: 0.0 }
-                                group.first().copy(summary = group.joinToString("、") { it.summary }, amount = "¥%.2f".format(total), dishes = allDishes, isAppend = false)
+                                val origTotal = group.sumOf { it.originalAmount.replace("¥", "").replace(",", "").toDoubleOrNull() ?: 0.0 }
+                                val deductTotal = origTotal - total
+                                group.first().copy(
+                                    summary = group.joinToString("、") { it.summary },
+                                    amount = "¥%.2f".format(total),
+                                    originalAmount = "¥%.2f".format(origTotal),
+                                    pointsDeduct = if (deductTotal > 0.01) "¥%.2f".format(deductTotal) else "",
+                                    dishes = allDishes, isAppend = false
+                                )
                             }
                         }
                     }
@@ -136,7 +145,7 @@ fun HomeWorkbenchScreen(
                     itemsIndexed(pageOrders, key = { _, it -> "${it.id}_${it.tableLabel}_${it.time}" }) { _, order ->
                         OrderWorkCard(order, pageTab, expandedOrder == order.id,
                             { expandedOrder = if (expandedOrder == order.id) null else order.id },
-                            { onAdvanceOrder(order.id) },
+                            { if (order.status == "待结账" && onCheckout != null) onCheckout(order) else onAdvanceOrder(order.id) },
                             { dishName -> onToggleDishServed(order.id, dishName) }
                         )
                     }
