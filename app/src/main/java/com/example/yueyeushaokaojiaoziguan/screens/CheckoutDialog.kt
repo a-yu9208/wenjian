@@ -37,8 +37,10 @@ fun CheckoutDialog(
     val originalAmount = order.originalAmount.ifBlank { order.amount }
     val pointsDeduct = order.pointsDeduct
     val baseAmount = order.amount.replace("¥", "").toDoubleOrNull() ?: 0.0
+    val originalNum = originalAmount.replace("¥", "").toDoubleOrNull() ?: 0.0
     var utensilSets by remember { mutableIntStateOf(0) }
     val utensilFee = utensilSets * 1.0
+    val displayOriginal = "¥%.2f".format(originalNum + utensilFee)
     val finalAmount = "¥%.2f".format(baseAmount + utensilFee)
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -50,12 +52,26 @@ fun CheckoutDialog(
             Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 // Title
                 Text("${order.tableLabel} 结账", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(16.dp))
 
-                // Amount rows
+                // 餐具选择器
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("餐具 (¥1/套)", fontSize = 14.sp, color = Color.Gray)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilledIconButton(onClick = { if (utensilSets > 0) utensilSets-- }, modifier = Modifier.size(32.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFFF5F5F5))) { Text("−", fontSize = 16.sp, color = Color.DarkGray) }
+                        Text("$utensilSets", fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.widthIn(min = 24.dp), textAlign = TextAlign.Center)
+                        FilledIconButton(onClick = { utensilSets++ }, modifier = Modifier.size(32.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFFF5F5F5))) { Text("+", fontSize = 16.sp, color = Color.DarkGray) }
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Amount rows — 餐具费已含在金额中
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("应付金额", fontSize = 15.sp, color = Color.Gray)
-                    Text(originalAmount, fontSize = 15.sp, color = Color.Gray)
+                    Text(displayOriginal, fontSize = 15.sp, color = Color.Gray)
                 }
                 if (pointsDeduct.isNotBlank()) {
                     Spacer(Modifier.height(6.dp))
@@ -70,20 +86,6 @@ fun CheckoutDialog(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text("实收金额", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = BrandOrange)
                     Text(finalAmount, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = BrandOrange)
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                // 餐具费
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("餐具 (¥1/套)", fontSize = 14.sp, color = Color.Gray)
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilledIconButton(onClick = { if (utensilSets > 0) utensilSets-- }, modifier = Modifier.size(32.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFFF5F5F5))) { Text("−", fontSize = 16.sp, color = Color.DarkGray) }
-                        Text("$utensilSets", fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.widthIn(min = 24.dp), textAlign = TextAlign.Center)
-                        FilledIconButton(onClick = { utensilSets++ }, modifier = Modifier.size(32.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFFF5F5F5))) { Text("+", fontSize = 16.sp, color = Color.DarkGray) }
-                    }
                 }
 
                 Spacer(Modifier.height(20.dp))
