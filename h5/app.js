@@ -515,9 +515,20 @@ async function loadPointsLog() {
       if (json.data.logs.length === 0) {
         el.innerHTML = '<div class="me-row" style="color:var(--text2)">暂无积分记录</div>';
       } else {
-        el.innerHTML = json.data.logs.map(l =>
-          `<div class="me-row"><span>${l.reason}</span><span style="color:${l.delta > 0 ? 'var(--green)' : 'var(--red)'}">${l.delta > 0 ? '+' : ''}${l.delta}</span></div>`
-        ).join('') + `<div class="me-row" style="color:var(--text2);font-size:12px">手机号：${phone}</div>`;
+        const logs = json.data.logs;
+        const INIT_SHOW = 3;
+        const renderLogs = (list) => list.map(l =>
+          `<div class="me-row"><span>${l.reason}<small style="color:var(--text2);margin-left:6px">${l.time}</small></span><span style="color:${l.delta > 0 ? 'var(--green)' : 'var(--red)'}">${l.delta > 0 ? '+' : ''}${l.delta}</span></div>`
+        ).join('');
+        const footer = `<div class="me-row" style="color:var(--text2);font-size:12px">手机号：${phone}</div>`;
+        if (logs.length <= INIT_SHOW) {
+          el.innerHTML = renderLogs(logs) + footer;
+        } else {
+          el.innerHTML = renderLogs(logs.slice(0, INIT_SHOW))
+            + `<div id="points-log-more" style="display:none">${renderLogs(logs.slice(INIT_SHOW))}</div>`
+            + `<div class="me-row" style="justify-content:center"><button id="points-log-toggle" class="btn-text" onclick="const m=document.getElementById('points-log-more'),b=document.getElementById('points-log-toggle');if(m.style.display==='none'){m.style.display='block';b.textContent='收起'}else{m.style.display='none';b.textContent='查看更多(${logs.length - INIT_SHOW}条)'}">查看更多(${logs.length - INIT_SHOW}条)</button></div>`
+            + footer;
+        }
       }
     }
   } catch (e) {

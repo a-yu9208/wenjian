@@ -30,8 +30,8 @@ class CloudBackedMerchantRepository(
         return bridge.generateTableQrCode(request)
     }
 
-    override suspend fun pushOrderStatus(tableLabel: String, status: String) {
-        bridge.pushOrderStatus(tableLabel, status)
+    override suspend fun pushOrderStatus(tableLabel: String, status: String, utensilSets: Int) {
+        bridge.pushOrderStatus(tableLabel, status, utensilSets)
     }
 
     override suspend fun pushDishStock(name: String, stock: Int) {

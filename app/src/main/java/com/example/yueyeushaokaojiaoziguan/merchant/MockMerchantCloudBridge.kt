@@ -26,7 +26,7 @@ class MockMerchantCloudBridge : MerchantCloudBridge {
         )
     }
 
-    override suspend fun pushOrderStatus(tableLabel: String, status: String) = Unit
+    override suspend fun pushOrderStatus(tableLabel: String, status: String, utensilSets: Int) = Unit
 
     override suspend fun pushDishStock(name: String, stock: Int) = Unit
 

@@ -222,7 +222,7 @@ private fun ShaokaoMerchantApp(
             paymentQr = uiState.paymentQr,
             onDismiss = { vm.dismissCheckoutDialog() },
             onNotPaid = { vm.dismissCheckoutDialog() },
-            onPaid = { vm.advanceOrderStatus(order.id) }
+            onPaid = { utensilSets -> vm.advanceOrderStatus(order.id, utensilSets) }
         )
     }
 

@@ -8,8 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Modifierimport androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -33,11 +32,14 @@ fun CheckoutDialog(
     paymentQr: PaymentQrConfig,
     onDismiss: () -> Unit,
     onNotPaid: () -> Unit,
-    onPaid: () -> Unit
+    onPaid: (utensilSets: Int) -> Unit
 ) {
     val originalAmount = order.originalAmount.ifBlank { order.amount }
     val pointsDeduct = order.pointsDeduct
-    val finalAmount = order.amount
+    val baseAmount = order.amount.replace("¥", "").toDoubleOrNull() ?: 0.0
+    var utensilSets by remember { mutableIntStateOf(0) }
+    val utensilFee = utensilSets * 1.0
+    val finalAmount = "¥%.2f".format(baseAmount + utensilFee)
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Card(
@@ -68,6 +70,20 @@ fun CheckoutDialog(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text("实收金额", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = BrandOrange)
                     Text(finalAmount, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = BrandOrange)
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // 餐具费
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("餐具 (¥1/套)", fontSize = 14.sp, color = Color.Gray)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilledIconButton(onClick = { if (utensilSets > 0) utensilSets-- }, modifier = Modifier.size(32.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFFF5F5F5))) { Text("−", fontSize = 16.sp, color = Color.DarkGray) }
+                        Text("$utensilSets", fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.widthIn(min = 24.dp), textAlign = TextAlign.Center)
+                        FilledIconButton(onClick = { utensilSets++ }, modifier = Modifier.size(32.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFFF5F5F5))) { Text("+", fontSize = 16.sp, color = Color.DarkGray) }
+                    }
                 }
 
                 Spacer(Modifier.height(20.dp))
@@ -118,7 +134,7 @@ fun CheckoutDialog(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(onClick = { onNotPaid(); onDismiss() }, modifier = Modifier.weight(1f).height(46.dp),
                         shape = RoundedCornerShape(12.dp)) { Text("暂未支付") }
-                    Button(onClick = { onPaid(); onDismiss() }, modifier = Modifier.weight(1f).height(46.dp),
+                    Button(onClick = { onPaid(utensilSets); onDismiss() }, modifier = Modifier.weight(1f).height(46.dp),
                         shape = RoundedCornerShape(12.dp)) { Text("支付完成") }
                 }
             }

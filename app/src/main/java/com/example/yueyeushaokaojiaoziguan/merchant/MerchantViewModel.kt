@@ -499,7 +499,7 @@ class MerchantViewModel(
         }
     }
 
-    fun advanceOrderStatus(orderId: Int) {
+    fun advanceOrderStatus(orderId: Int, utensilSets: Int = 0) {
         val nextState = _uiState.value.let { state ->
             val updated = state.orders.map { order ->
                 if (order.id == orderId) {
@@ -518,7 +518,7 @@ class MerchantViewModel(
         val targetOrder = nextState.orders.firstOrNull { it.id == orderId } ?: return
         if (targetOrder.id > 0) {
             viewModelScope.launch(Dispatchers.IO) {
-                runCatching { repository.pushOrderStatus(targetOrder.id.toString(), targetOrder.status) }
+                runCatching { repository.pushOrderStatus(targetOrder.id.toString(), targetOrder.status, utensilSets) }
                     .onSuccess {
                         if (targetOrder.status == "已完成") fetchMerchantData(initialLoad = false)
                     }

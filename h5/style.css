@@ -74,6 +74,7 @@ button{border:none;cursor:pointer;font:inherit}
 .me-avatar{width:64px;height:64px;border-radius:50%;background:var(--cream);display:inline-flex;align-items:center;justify-content:center;font-size:28px}
 .me-name{font-size:18px;font-weight:700;margin-top:8px}.me-points{font-size:14px;color:var(--brand);margin-top:4px}
 .me-action{padding:0 16px 12px;}.me-action .btn-primary{width:100%;padding:12px;border-radius:var(--r);font-size:15px;font-weight:600;background:var(--brand);color:#fff}
+.btn-text{background:none;border:none;color:var(--brand);font-size:13px;padding:4px 0;cursor:pointer}
 .me-section{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:12px}
 .me-section h3{font-size:15px;margin-bottom:8px}
 .me-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:var(--text2);border-bottom:1px solid #f5f5f5}

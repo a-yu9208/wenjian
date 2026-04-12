@@ -7,7 +7,7 @@ interface MerchantRepository {
     suspend fun getOrders(): List<OrderItem>
     suspend fun getTables(): List<TableItem>
     suspend fun generateTableQrCode(request: TableQrRequest): TableQrResponse
-    suspend fun pushOrderStatus(tableLabel: String, status: String)
+    suspend fun pushOrderStatus(tableLabel: String, status: String, utensilSets: Int = 0)
     suspend fun pushDishStock(name: String, stock: Int)
     suspend fun createDish(dish: DishItem)
     suspend fun deleteDishes(names: Set<String>)
