@@ -61,6 +61,14 @@ class SseService : Service() {
                 "checkout" -> Triple("${area} ${table} 的客人申请结账啦！", "${prefix}，${area}${table}的客人要结账啦", "Home")
                 "new_order" -> Triple("${area} ${table} 有新订单！", "${prefix}，${area}${table}来新单啦", "Home")
                 "append_order" -> Triple("${area} ${table} 加单啦！", "${prefix}，${area}${table}的客人又加单啦", "Home")
+                "refresh" -> {
+                    // 静默刷新，不播报语音、不弹通知
+                    sendBroadcast(Intent("com.shaokao.SSE_EVENT").apply {
+                        putExtra("alert", "")
+                        setPackage(packageName)
+                    })
+                    return
+                }
                 else -> return
             }
             TtsManager.speak(tts)

@@ -36,7 +36,9 @@ class MerchantViewModel(
 
     /** Called from broadcast receiver when SSE event arrives */
     fun onSseAlert(alert: String) {
-        _uiState.value = _uiState.value.copy(checkoutAlert = alert)
+        if (alert.isNotEmpty()) {
+            _uiState.value = _uiState.value.copy(checkoutAlert = alert)
+        }
         fetchMerchantData(initialLoad = false)
     }
 
