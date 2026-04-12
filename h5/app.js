@@ -390,7 +390,7 @@ async function fetchBillPoints(phone) {
       if (pts > 0 && maxDeduct > 0) {
         sec.innerHTML = `<div class="points-toggle">
           <input type="checkbox" id="usePoints" onchange="usePoints=this.checked;updateBillTotal()">
-          <label for="usePoints">使用积分抵扣¥${maxDeduct}（当前${pts}积分，每单最多抵${MOCK.pointsRate.maxDeductPercent}%）</label>
+          <label for="usePoints">本单可用积分抵扣¥${maxDeduct}</label>
         </div>`;
       } else if (pts > 0) {
         sec.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0">当前有' + pts + '积分，本单暂不可抵扣</div>';

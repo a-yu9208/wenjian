@@ -850,7 +850,11 @@ class MerchantViewModel(
                     qrFileId = currentState.qrFileId,
                     pointsConfig = currentState.pointsConfig,
                     pointsLogs = currentState.pointsLogs,
-                    profile = currentState.profile
+                    profile = currentState.profile,
+                    pendingUpdate = currentState.pendingUpdate,
+                    checkoutDialogOrder = currentState.checkoutDialogOrder,
+                    checkoutAlert = currentState.checkoutAlert,
+                    paymentQr = currentState.paymentQr
                 )
                 }
             }.onSuccess { nextState ->
