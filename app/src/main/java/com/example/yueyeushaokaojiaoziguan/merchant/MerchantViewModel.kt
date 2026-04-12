@@ -316,6 +316,9 @@ class MerchantViewModel(
         val nextCategories = currentCats.filterNot { it == normalized }
         val fallback = nextCategories.first()
 
+        // 先记录需要移动的菜品名（在修改 dishes 之前）
+        val movedNames = _uiState.value.dishes.filter { it.category == normalized }.map { it.name }.toSet()
+
         val nextDishes = _uiState.value.dishes.map { dish ->
             if (dish.category == normalized) dish.copy(category = fallback) else dish
         }
@@ -333,7 +336,6 @@ class MerchantViewModel(
             errorMessage = null
         )
         syncCategoryOrder(nextCategories)
-        val movedNames = _uiState.value.dishes.filter { it.category == normalized }.map { it.name }.toSet()
         if (movedNames.isNotEmpty()) {
             batchUpdateCategory(movedNames, fallback)
         }
@@ -364,6 +366,17 @@ class MerchantViewModel(
             val json = cats.joinToString(",", prefix = "[", postfix = "]") { "\"$it\"" }
             MerchantHttpClient().post("/merchant/categories/order", """{"categories":$json}""")
         }
+    }
+
+    private fun fetchSavedCategories(): List<String> {
+        return try {
+            val result = MerchantHttpClient().get("/merchant/categories/order")
+            if (result is MerchantApiResult.Success) {
+                val json = org.json.JSONObject(result.data)
+                val arr = json.optJSONObject("data")?.optJSONArray("categories") ?: return emptyList()
+                (0 until arr.length()).map { arr.getString(it) }
+            } else emptyList()
+        } catch (_: Exception) { emptyList() }
     }
 
     fun deleteDishes(names: Set<String>) {
@@ -814,12 +827,14 @@ class MerchantViewModel(
                 val dishesDeferred = async { repository.getDishes() }
                 val orders = async { repository.getOrders() }
                 val tables = async { repository.getTables() }
+                val savedCatsDeferred = async { fetchSavedCategories() }
                 val dishes = dishesDeferred.await()
+                val savedCats = savedCatsDeferred.await()
 
                 MerchantUiState(
                     dashboardStats = dashboard.await(),
                     quickEntries = entries.await(),
-                    categories = mergeCategories(dishes, currentState.categories),
+                    categories = mergeCategories(dishes, currentState.categories, savedCats),
                     dishes = dishes,
                     orders = orders.await(),
                     tables = tables.await(),
@@ -873,11 +888,13 @@ class MerchantViewModel(
         }
     }
 
-    private fun mergeCategories(dishes: List<DishItem>, existing: List<String>): List<String> {
-        val defaults = listOf("烧烤", "蔬菜", "饮品", "套餐", "未分类")
-        return (defaults + existing + dishes.map { it.category.ifBlank { "未分类" } })
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-            .distinct()
+    private fun mergeCategories(dishes: List<DishItem>, existing: List<String>, saved: List<String>): List<String> {
+        val fromDishes = dishes.map { it.category.ifBlank { "未分类" }.trim() }.filter { it.isNotBlank() }
+        // 以后端保存的顺序为准，补充菜品中存在但未记录的分类
+        return if (saved.isNotEmpty()) {
+            (saved + fromDishes).distinct()
+        } else {
+            (existing + fromDishes).distinct()
+        }
     }
 }
