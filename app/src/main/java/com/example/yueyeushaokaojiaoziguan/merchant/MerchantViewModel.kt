@@ -888,7 +888,7 @@ class MerchantViewModel(
         }
     }
 
-    private fun mergeCategories(dishes: List<DishItem>, existing: List<String>, saved: List<String>): List<String> {
+    private fun mergeCategories(dishes: List<DishItem>, existing: List<String>, saved: List<String> = emptyList()): List<String> {
         val fromDishes = dishes.map { it.category.ifBlank { "未分类" }.trim() }.filter { it.isNotBlank() }
         // 以后端保存的顺序为准，补充菜品中存在但未记录的分类
         return if (saved.isNotEmpty()) {
