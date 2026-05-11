@@ -1,0 +1,754 @@
+{% extends "base.html" %}
+{% block title %}管理面板{% endblock %}
+
+{% block extra_css %}
+<style>
+.dash-wrap{display:flex;min-height:calc(100vh - 120px);margin:-1.5rem -12px 0}
+.sidebar{width:200px;background:#fff;padding:20px 0;flex-shrink:0;position:sticky;top:0;height:calc(100vh - 56px);overflow-y:auto;border-right:1px solid #e2e8f0}
+.sidebar .logo{padding:0 16px 16px;font-size:15px;font-weight:600;color:#475569}
+.sidebar nav{padding:4px 8px}
+.sidebar a{display:flex;align-items:center;gap:8px;padding:9px 12px;color:#64748b;text-decoration:none;font-size:13px;transition:all .15s;border-radius:8px;margin-bottom:2px}
+.sidebar a:hover{background:#f1f5f9;color:#334155}
+.sidebar a.active{background:#eff6ff;color:#3b82f6;font-weight:600}
+.sidebar .badge-s{background:#ef4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:auto}
+.sidebar .sep{height:1px;background:#f1f5f9;margin:6px 12px}
+
+.dash-main{flex:1;padding:30px;overflow-y:auto;background:#f1f5f9}
+.page{display:none}
+.page.active{display:block}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:12px;padding:22px;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:center}
+.stat-card .num{font-size:32px;font-weight:700;margin:6px 0}
+.stat-card .label{color:#94a3b8;font-size:13px}
+.c-orange{color:#f59e0b}.c-green{color:#22c55e}.c-purple{color:#a855f7}.c-blue{color:#3b82f6}
+
+.card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:20px}
+.card h3{margin:0 0 16px;font-size:16px;display:flex;align-items:center;gap:8px}
+.card h3 .badge-c{background:#ef4444;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px}
+
+table{width:100%;border-collapse:collapse}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid #f1f5f9;font-size:13px}
+th{color:#94a3b8;font-weight:600;font-size:12px;text-transform:uppercase}
+tr:hover{background:#f8fafc}
+
+.btn-d{padding:5px 14px;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:all .15s}
+.btn-approve{background:#22c55e;color:#fff}.btn-approve:hover{background:#16a34a}
+.btn-reject{background:#ef4444;color:#fff}.btn-reject:hover{background:#dc2626}
+.btn-public{background:#3b82f6;color:#fff}.btn-public:hover{background:#2563eb}
+.btn-send{background:#a855f7;color:#fff}.btn-send:hover{background:#9333ea}
+.btn-save{background:#f59e0b;color:#fff}.btn-save:hover{background:#d97706}
+
+.tag{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:500}
+.tag-pending{background:#fef3c7;color:#d97706}.tag-approved{background:#dcfce7;color:#16a34a}
+.tag-rejected{background:#fee2e2;color:#dc2626}.tag-public{background:#dbeafe;color:#2563eb}.tag-private{background:#f1f5f9;color:#94a3b8}
+
+.empty{text-align:center;padding:40px;color:#cbd5e1;font-size:14px}
+.actions{display:flex;gap:5px}
+
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;color:#64748b;margin-bottom:4px}
+.form-group select,.form-group input[type=text],.form-group textarea{width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:14px}
+.form-group textarea{min-height:80px;resize:vertical}
+
+.tpl-card{background:#f8fafc;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #e2e8f0}
+.tpl-label{font-size:12px;color:#94a3b8;margin-bottom:6px;font-weight:600}
+.tpl-card input,.tpl-card textarea{width:100%;padding:6px 10px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;margin-bottom:6px}
+.tpl-card textarea{min-height:50px;resize:vertical}
+
+.notif-item{padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px;display:flex;gap:10px;align-items:baseline}
+.notif-to{color:#3b82f6;font-weight:500;min-width:80px}
+
+.ann-row{border:1px solid #e2e8f0;border-radius:8px;margin-bottom:6px;overflow:hidden}
+.ann-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;transition:background .15s}
+.ann-bar:hover{background:#f8fafc}
+.ann-arrow{color:#94a3b8;font-size:18px;transition:transform .2s;font-weight:700}
+.ann-row.open .ann-arrow{transform:rotate(90deg)}
+.ann-detail{display:none;padding:0 14px 14px;border-top:1px solid #f1f5f9}
+.ann-row.open .ann-detail{display:block;padding-top:14px}
+.ann-detail input,.ann-detail textarea{width:100%;padding:6px 10px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;margin-bottom:8px}
+.ann-detail textarea{min-height:60px;resize:vertical}
+.notif-time{color:#cbd5e1;font-size:12px;margin-left:auto;white-space:nowrap}
+
+.toast{position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:8px;color:#fff;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}.toast.success{background:#22c55e}.toast.error{background:#ef4444}
+
+.filter-bar{display:flex;gap:10px;margin-bottom:14px}
+.filter-input{flex:1;padding:7px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px}
+.filter-select{padding:7px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;min-width:120px}
+.sortable{cursor:pointer;user-select:none}.sortable:hover{color:#3b82f6}
+.status-sel{padding:3px 6px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px;cursor:pointer}
+
+.settings-grid{display:grid;gap:16px;max-width:500px}
+
+@media(max-width:768px){
+.sidebar{width:52px;padding:12px 0}.sidebar .logo span,.sidebar a span,.sidebar .badge-s{display:none}
+.sidebar a{justify-content:center;padding:10px 0}
+.dash-main{padding:16px}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-wrap">
+    <div class="sidebar">
+        <div class="logo">📊 <span>管理面板</span></div>
+        <nav>
+            <a href="#" class="active" onclick="showPage('overview',this)">📈 <span>概览</span></a>
+            <a href="#" onclick="showPage('review',this)">⏳ <span>审核管理</span>{% if pending_count %}<span class="badge-s">{{ pending_count }}</span>{% endif %}</a>
+            <div class="sep"></div>
+            <a href="#" onclick="showPage('notif-send',this)">📤 <span>发送通知</span></a>
+            <a href="#" onclick="showPage('notif-tpl',this)">📝 <span>通知模板</span></a>
+            <a href="#" onclick="showPage('notif-log',this)">📋 <span>通知记录</span></a>
+            <div class="sep"></div>
+            <a href="#" onclick="showPage('announcement',this)">📢 <span>弹窗公告</span></a>
+            <div class="sep"></div>
+            <a href="#" onclick="showPage('content',this)">📁 <span>内容管理</span></a>
+            <a href="#" onclick="showPage('users',this)">👥 <span>用户管理</span></a>
+            <div class="sep"></div>
+            <a href="#" onclick="showPage('site-settings',this)">⚙️ <span>网站设置</span></a>
+            <div class="sep"></div>
+            <a href="#" onclick="showPage('admin-logs',this)">📜 <span>操作日志</span></a>
+            <a href="#" onclick="showPage('login-logs',this)">🔐 <span>登录日志</span></a>
+        </nav>
+    </div>
+
+    <div class="dash-main">
+
+        <!-- 概览 -->
+        <div id="pg-overview" class="page active">
+            <h2 style="margin:0 0 20px">概览</h2>
+            <div class="stats">
+                <div class="stat-card"><div class="label">待审核</div><div class="num c-orange">{{ pending_count }}</div></div>
+                <div class="stat-card"><div class="label">已通过</div><div class="num c-green">{{ approved_count }}</div></div>
+                <div class="stat-card"><div class="label">总内容</div><div class="num c-purple">{{ total_count }}</div></div>
+                <div class="stat-card"><div class="label">用户数</div><div class="num c-blue">{{ user_count }}</div></div>
+            </div>
+            {% if pending_videos or pending_files %}
+            <div class="card">
+                <h3>⏳ 最新待审核</h3>
+                <table><tr><th>类型</th><th>标题</th><th>上传者</th><th>时间</th><th>操作</th></tr>
+                {% for v in pending_videos|slice:":5" %}
+                <tr><td>🎬 视频</td><td>{{ v.title }}</td><td>{{ v.uploader.username }}</td><td>{{ v.created_at|date:"m-d H:i" }}</td>
+                <td class="actions"><button class="btn-d btn-approve" onclick="review('video','approve',{{ v.id }})">✓</button><button class="btn-d btn-reject" onclick="review('video','reject',{{ v.id }})">✗</button></td></tr>
+                {% endfor %}
+                {% for f in pending_files|slice:":5" %}
+                <tr><td>📄 文件</td><td>{{ f.title }}</td><td>{{ f.uploader.username }}</td><td>{{ f.created_at|date:"m-d H:i" }}</td>
+                <td class="actions"><button class="btn-d btn-approve" onclick="review('file','approve',{{ f.id }})">✓</button><button class="btn-d btn-reject" onclick="review('file','reject',{{ f.id }})">✗</button></td></tr>
+                {% endfor %}
+                </table>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 审核管理 -->
+        <div id="pg-review" class="page">
+            <h2 style="margin:0 0 20px">审核管理</h2>
+            <div class="card">
+                <h3>🎬 待审核视频 <span class="badge-c">{{ pending_videos|length }}</span></h3>
+                {% if pending_videos %}
+                <table><tr><th>标题</th><th>上传者</th><th>可见性</th><th>大小</th><th>时间</th><th>操作</th></tr>
+                {% for v in pending_videos %}
+                <tr><td>{{ v.title }}</td><td>{{ v.uploader.username }}</td>
+                <td><span class="tag tag-{{ v.visibility }}">{{ v.get_visibility_display }}</span></td>
+                <td>{{ v.get_file_size_mb }}MB</td><td>{{ v.created_at|date:"m-d H:i" }}</td>
+                <td class="actions"><button class="btn-d btn-approve" onclick="review('video','approve',{{ v.id }})">✓ 通过</button><button class="btn-d btn-reject" onclick="review('video','reject',{{ v.id }})">✗ 驳回</button></td></tr>
+                {% endfor %}</table>
+                {% else %}<div class="empty">🎉 没有待审核的视频</div>{% endif %}
+            </div>
+            <div class="card">
+                <h3>📄 待审核文件 <span class="badge-c">{{ pending_files|length }}</span></h3>
+                {% if pending_files %}
+                <table><tr><th>标题</th><th>上传者</th><th>类型</th><th>可见性</th><th>大小</th><th>时间</th><th>操作</th></tr>
+                {% for f in pending_files %}
+                <tr><td>{{ f.title }}</td><td>{{ f.uploader.username }}</td><td>{{ f.get_file_type_display }}</td>
+                <td><span class="tag tag-{{ f.visibility }}">{{ f.get_visibility_display }}</span></td>
+                <td>{{ f.get_file_size_mb }}MB</td><td>{{ f.created_at|date:"m-d H:i" }}</td>
+                <td class="actions"><button class="btn-d btn-approve" onclick="review('file','approve',{{ f.id }})">✓ 通过</button><button class="btn-d btn-reject" onclick="review('file','reject',{{ f.id }})">✗ 驳回</button></td></tr>
+                {% endfor %}</table>
+                {% else %}<div class="empty">🎉 没有待审核的文件</div>{% endif %}
+            </div>
+        </div>
+
+        <!-- 发送通知 -->
+        <div id="pg-notif-send" class="page">
+            <h2 style="margin:0 0 20px">发送通知</h2>
+            <div class="card">
+                <div class="form-group">
+                    <label>接收人</label>
+                    <select id="notif-user">
+                        <option value="all">📢 全部用户</option>
+                        {% for u in users %}<option value="{{ u.id }}">{{ u.username }}{% if u.is_superuser %} (超管){% elif u.role == 'admin' %} (管理员){% endif %}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group"><label>标题</label><input type="text" id="notif-title" placeholder="通知标题"></div>
+                <div class="form-group"><label>内容</label><textarea id="notif-content" placeholder="通知内容"></textarea></div>
+                <button class="btn-d btn-send" onclick="sendNotification()">📤 发送通知</button>
+            </div>
+        </div>
+
+        <!-- 通知模板 -->
+        <div id="pg-notif-tpl" class="page">
+            <h2 style="margin:0 0 20px">通知模板</h2>
+            <div class="card">
+                <p style="color:#94a3b8;font-size:13px;margin:0 0 16px">审核操作时自动按模板发送通知。可用变量：<code>{title}</code> 标题，<code>{username}</code> 用户名</p>
+                {% for tpl in notification_templates %}
+                <div class="tpl-card" data-id="{{ tpl.id }}">
+                    <div class="tpl-label">{{ tpl.get_key_display }}</div>
+                    <input type="text" class="tpl-title" value="{{ tpl.title }}">
+                    <textarea class="tpl-content">{{ tpl.content }}</textarea>
+                    <button class="btn-d btn-save" onclick="saveTemplate({{ tpl.id }},this)">💾 保存</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 通知记录 -->
+        <div id="pg-notif-log" class="page">
+            <h2 style="margin:0 0 20px">通知记录</h2>
+            <div class="card">
+                {% for n in recent_notifications %}
+                <div class="notif-item">
+                    <span class="notif-to">@{{ n.user.username }}</span>
+                    <strong>{{ n.title }}</strong>
+                    {% if n.is_read %}<span class="tag tag-approved">已读</span>{% else %}<span class="tag tag-pending">未读</span>{% endif %}
+                    <span class="notif-time">{{ n.created_at|date:"m-d H:i" }}</span>
+                </div>
+                {% empty %}<div class="empty">暂无通知记录</div>{% endfor %}
+            </div>
+        </div>
+
+        <!-- 弹窗公告管理 -->
+        <div id="pg-announcement" class="page">
+            <h2 style="margin:0 0 20px">弹窗公告</h2>
+            <div class="card">
+                <h3>新建公告</h3>
+                <div class="form-group"><label>标题</label><input type="text" id="ann-title" placeholder="公告标题"></div>
+                <div class="form-group"><label>内容</label><textarea id="ann-content" placeholder="公告内容，支持换行"></textarea></div>
+                <button class="btn-d btn-send" onclick="saveAnnouncement()">📢 发布公告</button>
+            </div>
+            <div class="card">
+                <h3>已有公告</h3>
+                {% for ann in announcements %}
+                <div class="ann-row" data-ann-id="{{ ann.id }}">
+                    <div class="ann-bar" onclick="this.parentElement.classList.toggle('open')">
+                        <span class="tag {% if ann.is_active %}tag-approved{% else %}tag-rejected{% endif %}" style="margin-right:8px">{% if ann.is_active %}启用{% else %}停用{% endif %}</span>
+                        <span style="color:#94a3b8;font-size:12px;min-width:80px">{{ ann.updated_at|date:"m-d H:i" }}</span>
+                        <span style="flex:1;font-size:14px;color:#334155">{{ ann.title }}</span>
+                        <span class="ann-arrow">›</span>
+                    </div>
+                    <div class="ann-detail">
+                        <input type="text" class="ann-edit-title" value="{{ ann.title }}">
+                        <textarea class="ann-edit-content">{{ ann.content }}</textarea>
+                        <div style="display:flex;gap:6px">
+                            <button class="btn-d btn-save" onclick="updateAnnouncement({{ ann.id }},this)">💾 保存</button>
+                            <button class="btn-d btn-public" onclick="toggleAnnouncement({{ ann.id }})">{% if ann.is_active %}⏸ 停用{% else %}▶ 启用{% endif %}</button>
+                            <button class="btn-d btn-reject" onclick="deleteAnnouncement({{ ann.id }})">🗑 删除</button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}<div class="empty">暂无公告</div>{% endfor %}
+            </div>
+        </div>
+
+        <!-- 内容管理 -->
+        <div id="pg-content" class="page">
+            <h2 style="margin:0 0 20px">内容管理</h2>
+            <div class="card">
+                <h3>🎬 全部视频 ({{ all_videos|length }})</h3>
+                <div class="filter-bar">
+                    <input type="text" class="filter-input" placeholder="搜索标题/上传者..." onkeyup="filterTable(this,'vid-table')">
+                    <select class="filter-select" onchange="filterVisibility(this,'vid-table')">
+                        <option value="">全部可见性</option><option value="公开">公开</option><option value="私密">私密</option>
+                    </select>
+                </div>
+                {% if all_videos %}
+                <table id="vid-table"><thead><tr>
+                    <th class="sortable" onclick="sortTable('vid-table',0)">标题 ⇅</th>
+                    <th class="sortable" onclick="sortTable('vid-table',1)">上传者 ⇅</th>
+                    <th>状态</th><th>可见性</th><th>观看</th>
+                    <th class="sortable" onclick="sortTable('vid-table',5)">时间 ⇅</th>
+                    <th>操作</th>
+                </tr></thead><tbody>
+                {% for v in all_videos %}
+                <tr data-vis="{{ v.get_visibility_display }}"><td>{{ v.title }}</td><td>{{ v.uploader.username }}</td>
+                <td><span class="tag tag-{{ v.status }}">{{ v.get_status_display }}</span></td>
+                <td><span class="tag tag-{{ v.visibility }}">{{ v.get_visibility_display }}</span></td>
+                <td>{{ v.view_count }}</td><td data-sort="{{ v.created_at|date:'Y-m-d H:i' }}">{{ v.created_at|date:"m-d H:i" }}</td>
+                <td class="actions">
+                    <select class="status-sel" onchange="changeStatus('video',{{ v.id }},this.value)">
+                        <option value="" disabled selected>状态</option>
+                        <option value="pending">待审核</option><option value="approved">通过</option><option value="rejected">驳回</option>
+                    </select>
+                    <button class="btn-d btn-reject" onclick="deleteContent('video',{{ v.id }},'{{ v.title|escapejs }}')">🗑</button>
+                </td></tr>{% endfor %}</tbody></table>
+                {% else %}<div class="empty">暂无视频</div>{% endif %}
+            </div>
+            <div class="card">
+                <h3>📄 全部文件 ({{ all_files|length }})</h3>
+                <div class="filter-bar">
+                    <input type="text" class="filter-input" placeholder="搜索标题/上传者..." onkeyup="filterTable(this,'file-table')">
+                    <select class="filter-select" onchange="filterVisibility(this,'file-table')">
+                        <option value="">全部可见性</option><option value="公开">公开</option><option value="私密">私密</option>
+                    </select>
+                </div>
+                {% if all_files %}
+                <table id="file-table"><thead><tr>
+                    <th class="sortable" onclick="sortTable('file-table',0)">标题 ⇅</th>
+                    <th class="sortable" onclick="sortTable('file-table',1)">上传者 ⇅</th>
+                    <th>类型</th><th>状态</th><th>可见性</th><th>下载</th>
+                    <th class="sortable" onclick="sortTable('file-table',6)">时间 ⇅</th>
+                    <th>操作</th>
+                </tr></thead><tbody>
+                {% for f in all_files %}
+                <tr data-vis="{{ f.get_visibility_display }}"><td>{{ f.title }}</td><td>{{ f.uploader.username }}</td><td>{{ f.get_file_type_display }}</td>
+                <td><span class="tag tag-{{ f.status }}">{{ f.get_status_display }}</span></td>
+                <td><span class="tag tag-{{ f.visibility }}">{{ f.get_visibility_display }}</span></td>
+                <td>{{ f.download_count }}</td><td data-sort="{{ f.created_at|date:'Y-m-d H:i' }}">{{ f.created_at|date:"m-d H:i" }}</td>
+                <td class="actions">
+                    <select class="status-sel" onchange="changeStatus('file',{{ f.id }},this.value)">
+                        <option value="" disabled selected>状态</option>
+                        <option value="pending">待审核</option><option value="approved">通过</option><option value="rejected">驳回</option>
+                    </select>
+                    <button class="btn-d btn-reject" onclick="deleteContent('file',{{ f.id }},'{{ f.title|escapejs }}')">🗑</button>
+                </td></tr>{% endfor %}</tbody></table>
+                {% else %}<div class="empty">暂无文件</div>{% endif %}
+            </div>
+        </div>
+
+        <!-- 用户管理 -->
+        <div id="pg-users" class="page">
+            <h2 style="margin:0 0 20px">用户管理</h2>
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" class="filter-input" placeholder="搜索用户名/邮箱..." onkeyup="filterUserTable(this)">
+                </div>
+                {% if users %}
+                <table id="user-table"><thead><tr>
+                    <th class="sortable" onclick="sortTable('user-table',0)">用户名 ⇅</th>
+                    <th>邮箱</th><th>角色</th>
+                    <th class="sortable" onclick="sortTable('user-table',3)">注册时间 ⇅</th>
+                    <th>状态</th><th>操作</th>
+                </tr></thead><tbody>
+                {% for u in users %}
+                <tr data-uid="{{ u.id }}" data-super="{{ u.is_superuser|yesno:'1,0' }}">
+                    <td>{{ u.username }}</td>
+                    <td>{{ u.email|default:"—" }}</td>
+                    <td><span class="tag" style="background:{% if u.is_superuser %}#fee2e2;color:#dc2626{% elif u.role == 'admin' %}#dbeafe;color:#2563eb{% else %}#f1f5f9;color:#94a3b8{% endif %}">{% if u.is_superuser %}超级管理员{% else %}{{ u.get_role_display }}{% endif %}</span></td>
+                    <td data-sort="{{ u.date_joined|date:'Y-m-d' }}">{{ u.date_joined|date:"Y-m-d" }}</td>
+                    <td>{% if u.is_active %}🟢 活跃{% else %}🔴 禁用{% endif %}</td>
+                    <td class="actions">
+                        {% if not u.is_superuser %}
+                        <select class="status-sel" onchange="changeUserRole({{ u.id }},this.value);this.selectedIndex=0">
+                            <option value="" disabled selected>角色</option>
+                            <option value="user">普通用户</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                        <button class="btn-d btn-save" style="font-size:11px" onclick="promptResetPwd({{ u.id }},'{{ u.username|escapejs }}')">🔑 重置密码</button>
+                        <button class="btn-d {% if u.is_active %}btn-reject{% else %}btn-approve{% endif %}" style="font-size:11px" onclick="toggleUserActive({{ u.id }})">{% if u.is_active %}禁用{% else %}启用{% endif %}</button>
+                        {% else %}<span style="color:#cbd5e1">—</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}</tbody></table>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 网站设置 -->
+        <div id="pg-site-settings" class="page">
+            <h2 style="margin:0 0 20px">网站设置</h2>
+            <div class="card">
+                <h3>🎨 基本设置</h3>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label>网站名称</label>
+                        <input type="text" id="ss-site-name" value="{{ site_obj.site_name }}">
+                    </div>
+                    <div class="form-group">
+                        <label>主题色</label>
+                        <div style="display:flex;gap:10px;align-items:center">
+                            <input type="color" id="ss-primary-color" value="{{ site_obj.primary_color }}" style="width:50px;height:36px;padding:2px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer">
+                            <input type="text" id="ss-primary-color-text" value="{{ site_obj.primary_color }}" style="width:100px" oninput="document.getElementById('ss-primary-color').value=this.value">
+                            <div id="ss-primary-preview" style="width:36px;height:36px;border-radius:6px;background:{{ site_obj.primary_color }}"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>辅助色</label>
+                        <div style="display:flex;gap:10px;align-items:center">
+                            <input type="color" id="ss-secondary-color" value="{{ site_obj.secondary_color }}" style="width:50px;height:36px;padding:2px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer">
+                            <input type="text" id="ss-secondary-color-text" value="{{ site_obj.secondary_color }}" style="width:100px" oninput="document.getElementById('ss-secondary-color').value=this.value">
+                            <div id="ss-secondary-preview" style="width:36px;height:36px;border-radius:6px;background:{{ site_obj.secondary_color }}"></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top:16px;display:flex;gap:8px">
+                    <button class="btn-d btn-save" onclick="saveSiteSettings()">💾 保存设置</button>
+                    <button class="btn-d" style="background:#64748b;color:#fff" onclick="previewTheme()">👁 实时预览</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🖼 Logo</h3>
+                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                    <div id="ss-logo-preview" style="width:120px;height:60px;border:2px dashed #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#f8fafc">
+                        {% if site_obj.logo %}
+                        <img src="{{ site_obj.logo.url }}" style="max-width:100%;max-height:100%">
+                        {% else %}
+                        <span style="color:#cbd5e1;font-size:12px">暂无Logo</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="btn-d btn-public" style="cursor:pointer;display:inline-block">
+                            📤 上传Logo
+                            <input type="file" accept="image/*" style="display:none" onchange="uploadSettingsFile('logo',this)">
+                        </label>
+                        {% if site_obj.logo %}
+                        <button class="btn-d btn-reject" onclick="clearSettingsFile('logo')">🗑 清除</button>
+                        {% endif %}
+                    </div>
+                </div>
+                <p style="color:#94a3b8;font-size:12px;margin:8px 0 0">建议尺寸：高度 30-60px 的透明 PNG</p>
+            </div>
+
+            <div class="card">
+                <h3>🌄 背景图片</h3>
+                <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+                    <div id="ss-bg-preview" style="width:200px;height:120px;border:2px dashed #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#f8fafc">
+                        {% if site_obj.background_image %}
+                        <img src="{{ site_obj.background_image.url }}" style="width:100%;height:100%;object-fit:cover">
+                        {% else %}
+                        <span style="color:#cbd5e1;font-size:12px">暂无背景图</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="btn-d btn-public" style="cursor:pointer;display:inline-block">
+                            📤 上传背景图
+                            <input type="file" accept="image/*" style="display:none" onchange="uploadSettingsFile('background_image',this)">
+                        </label>
+                        {% if site_obj.background_image %}
+                        <button class="btn-d btn-reject" onclick="clearSettingsFile('background_image')">🗑 清除</button>
+                        {% endif %}
+                        <p style="color:#94a3b8;font-size:12px;margin:8px 0 0">上传后页面背景会显示此图片（带半透明遮罩）</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作日志 -->
+        <div id="pg-admin-logs" class="page">
+            <h2 style="margin:0 0 20px">操作日志</h2>
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" class="filter-input" placeholder="搜索操作人/操作/详情..." onkeyup="filterLogTable(this,'admin-log-table')">
+                </div>
+                {% if admin_logs %}
+                <table id="admin-log-table"><thead><tr>
+                    <th>时间</th><th>操作人</th><th>操作</th><th>详情</th><th>IP</th>
+                </tr></thead><tbody>
+                {% for log in admin_logs %}
+                <tr>
+                    <td style="white-space:nowrap">{{ log.created_at|date:"m-d H:i:s" }}</td>
+                    <td>{{ log.user.username|default:"—" }}</td>
+                    <td><span class="tag" style="background:#eff6ff;color:#3b82f6">{{ log.action }}</span></td>
+                    <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ log.detail }}">{{ log.detail|default:"—" }}</td>
+                    <td style="color:#94a3b8;font-size:12px">{{ log.ip|default:"—" }}</td>
+                </tr>
+                {% endfor %}</tbody></table>
+                {% else %}<div class="empty">暂无操作日志</div>{% endif %}
+            </div>
+        </div>
+
+        <!-- 登录日志 -->
+        <div id="pg-login-logs" class="page">
+            <h2 style="margin:0 0 20px">登录日志</h2>
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" class="filter-input" placeholder="搜索用户名/IP..." onkeyup="filterLogTable(this,'login-log-table')">
+                    <select class="filter-select" onchange="filterLoginStatus(this)">
+                        <option value="">全部状态</option>
+                        <option value="成功">成功</option>
+                        <option value="失败">失败</option>
+                    </select>
+                </div>
+                {% if login_logs %}
+                <table id="login-log-table"><thead><tr>
+                    <th>时间</th><th>用户名</th><th>状态</th><th>IP</th>
+                </tr></thead><tbody>
+                {% for log in login_logs %}
+                <tr data-status="{% if log.success %}成功{% else %}失败{% endif %}">
+                    <td style="white-space:nowrap">{{ log.created_at|date:"m-d H:i:s" }}</td>
+                    <td>{{ log.username }}</td>
+                    <td>{% if log.success %}<span class="tag tag-approved">✓ 成功</span>{% else %}<span class="tag tag-rejected">✗ 失败</span>{% endif %}</td>
+                    <td style="color:#94a3b8;font-size:12px">{{ log.ip|default:"—" }}</td>
+                </tr>
+                {% endfor %}</tbody></table>
+                {% else %}<div class="empty">暂无登录日志</div>{% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('pg-' + name).classList.add('active');
+    document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+    if (el) el.classList.add('active');
+    return false;
+}
+
+function toast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 2500);
+}
+
+function getCookie(name) {
+    const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return v ? v.pop() : '';
+}
+
+function apiCall(data) {
+    return fetch('/admin/action/', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','X-CSRFToken': getCookie('csrftoken')},
+        body: JSON.stringify(data)
+    }).then(r => r.json());
+}
+
+function review(model, act, id) {
+    const labels = {approve:'通过审核',reject:'驳回',make_public:'转为公开'};
+    if (!confirm('确定要' + labels[act] + '吗？')) return;
+    apiCall({type:'review', model, action:act, id})
+        .then(d => { toast(d.ok ? '✓ '+d.msg : '✗ '+d.msg, d.ok?'success':'error'); if(d.ok) setTimeout(()=>location.reload(),800); })
+        .catch(() => toast('请求失败','error'));
+}
+
+function sendNotification() {
+    const user_id = document.getElementById('notif-user').value;
+    const title = document.getElementById('notif-title').value.trim();
+    const content = document.getElementById('notif-content').value.trim();
+    if (!title || !content) { toast('标题和内容不能为空','error'); return; }
+    apiCall({type:'send_notification', user_id, title, content})
+        .then(d => {
+            toast(d.ok ? '✓ '+d.msg : '✗ '+d.msg, d.ok?'success':'error');
+            if(d.ok) { document.getElementById('notif-title').value=''; document.getElementById('notif-content').value=''; }
+        })
+        .catch(() => toast('请求失败','error'));
+}
+
+function saveTemplate(id, btn) {
+    const card = btn.closest('.tpl-card');
+    const title = card.querySelector('.tpl-title').value.trim();
+    const content = card.querySelector('.tpl-content').value.trim();
+    if (!title || !content) { toast('标题和内容不能为空','error'); return; }
+    apiCall({type:'save_template', id, title, content})
+        .then(d => toast(d.ok ? '✓ '+d.msg : '✗ '+d.msg, d.ok?'success':'error'))
+        .catch(() => toast('请求失败','error'));
+}
+
+function filterTable(input, tableId) {
+    applyFilters(tableId);
+}
+
+function filterVisibility(sel, tableId) {
+    applyFilters(tableId);
+}
+
+function applyFilters(tableId) {
+    var table = document.getElementById(tableId);
+    var card = table.closest('.card');
+    var input = card.querySelector('.filter-input');
+    var sel = card.querySelector('.filter-select');
+    var q = input ? input.value.toLowerCase() : '';
+    var v = sel ? sel.value : '';
+    var rows = table.tBodies[0].rows;
+    for (var i = 0; i < rows.length; i++) {
+        var textMatch = !q || (rows[i].cells[0].textContent.toLowerCase() + ' ' + rows[i].cells[1].textContent.toLowerCase()).includes(q);
+        var visMatch = !v || rows[i].dataset.vis === v;
+        rows[i].style.display = (textMatch && visMatch) ? '' : 'none';
+    }
+}
+
+const sortDirs = {};
+function sortTable(tableId, col) {
+    const key = tableId + '_' + col;
+    sortDirs[key] = !sortDirs[key];
+    const asc = sortDirs[key];
+    const tbody = document.getElementById(tableId).tBodies[0];
+    const rows = Array.from(tbody.rows);
+    rows.sort((a, b) => {
+        let va = a.cells[col].dataset.sort || a.cells[col].textContent.trim();
+        let vb = b.cells[col].dataset.sort || b.cells[col].textContent.trim();
+        return asc ? va.localeCompare(vb, 'zh') : vb.localeCompare(va, 'zh');
+    });
+    rows.forEach(r => tbody.appendChild(r));
+}
+
+function changeStatus(model, id, status) {
+    if (!status) return;
+    apiCall({type:'change_status', model, id, status})
+        .then(d => { toast(d.ok?'✓ '+d.msg:'✗ '+d.msg, d.ok?'success':'error'); if(d.ok) setTimeout(()=>location.reload(),800); })
+        .catch(() => toast('请求失败','error'));
+}
+
+function deleteContent(model, id, title) {
+    if (!confirm('确定要删除「' + title + '」吗？文件将被永久删除！')) return;
+    apiCall({type:'delete_content', model, id})
+        .then(d => { toast(d.ok?'✓ '+d.msg:'✗ '+d.msg, d.ok?'success':'error'); if(d.ok) setTimeout(()=>location.reload(),800); })
+        .catch(() => toast('请求失败','error'));
+}
+
+function filterUserTable(input) {
+    const q = input.value.toLowerCase();
+    const rows = document.getElementById('user-table').tBodies[0].rows;
+    for (const r of rows) {
+        const t = r.cells[0].textContent.toLowerCase() + ' ' + r.cells[1].textContent.toLowerCase();
+        r.style.display = t.includes(q) ? '' : 'none';
+    }
+}
+
+function changeUserRole(id, role) {
+    if (!role) return;
+    apiCall({type:'change_user_role', id, role})
+        .then(d => { toast(d.ok?'✓ '+d.msg:'✗ '+d.msg, d.ok?'success':'error'); if(d.ok) setTimeout(()=>location.reload(),800); })
+        .catch(() => toast('请求失败','error'));
+}
+
+function promptResetPwd(id, username) {
+    const pwd = prompt('为用户「' + username + '」设置新密码（至少6位）：');
+    if (!pwd) return;
+    if (pwd.length < 6) { toast('密码至少6位','error'); return; }
+    apiCall({type:'reset_user_password', id, password: pwd})
+        .then(d => toast(d.ok?'✓ '+d.msg:'✗ '+d.msg, d.ok?'success':'error'))
+        .catch(() => toast('请求失败','error'));
+}
+
+function toggleUserActive(id) {
+    if (!confirm('确定要切换此用户的启用/禁用状态吗？')) return;
+    apiCall({type:'toggle_user_active', id})
+        .then(d => { toast(d.ok?'✓ '+d.msg:'✗ '+d.msg, d.ok?'success':'error'); if(d.ok) setTimeout(()=>location.reload(),800); })
+        .catch(() => toast('请求失败','error'));
+}
+
+function saveAnnouncement() {
+    const title = document.getElementById('ann-title').value.trim();
+    const content = document.getElementById('ann-content').value.trim();
+    if (!title || !content) { toast('标题和内容不能为空','error'); return; }
+    apiCall({type:'save_announcement', title, content})
+        .then(d => { toast(d.ok?'✓ '+d.msg:'✗ '+d.msg, d.ok?'success':'error'); if(d.ok) setTimeout(()=>location.reload(),800); })
+        .catch(() => toast('请求失败','error'));
+}
+
+function updateAnnouncement(id, btn) {
+    const card = btn.closest('.ann-row');
+    const title = card.querySelector('.ann-edit-title').value.trim();
+    const content = card.querySelector('.ann-edit-content').value.trim();
+    if (!title || !content) { toast('标题和内容不能为空','error'); return; }
+    apiCall({type:'save_announcement', id, title, content})
+        .then(d => toast(d.ok?'✓ '+d.msg:'✗ '+d.msg, d.ok?'success':'error'))
+        .catch(() => toast('请求失败','error'));
+}
+
+function toggleAnnouncement(id) {
+    apiCall({type:'toggle_announcement', id})
+        .then(d => { toast(d.ok?'✓ '+d.msg:'✗ '+d.msg, d.ok?'success':'error'); if(d.ok) setTimeout(()=>location.reload(),800); })
+        .catch(() => toast('请求失败','error'));
+}
+
+function deleteAnnouncement(id) {
+    if (!confirm('确定删除此公告？')) return;
+    apiCall({type:'delete_announcement', id})
+        .then(d => { toast(d.ok?'✓ '+d.msg:'✗ '+d.msg, d.ok?'success':'error'); if(d.ok) setTimeout(()=>location.reload(),800); })
+        .catch(() => toast('请求失败','error'));
+}
+
+// ===== 网站设置 =====
+document.addEventListener('DOMContentLoaded', function() {
+    var pc = document.getElementById('ss-primary-color');
+    var sc = document.getElementById('ss-secondary-color');
+    if (pc) {
+        pc.addEventListener('input', function() {
+            document.getElementById('ss-primary-color-text').value = this.value;
+            document.getElementById('ss-primary-preview').style.background = this.value;
+        });
+    }
+    if (sc) {
+        sc.addEventListener('input', function() {
+            document.getElementById('ss-secondary-color-text').value = this.value;
+            document.getElementById('ss-secondary-preview').style.background = this.value;
+        });
+    }
+});
+
+function previewTheme() {
+    var pc = document.getElementById('ss-primary-color').value;
+    var sc = document.getElementById('ss-secondary-color').value;
+    document.documentElement.style.setProperty('--primary-color', pc);
+    document.documentElement.style.setProperty('--secondary-color', sc);
+    toast('预览已应用（刷新页面恢复）', 'success');
+}
+
+function saveSiteSettings() {
+    apiCall({
+        type: 'save_site_settings',
+        site_name: document.getElementById('ss-site-name').value,
+        primary_color: document.getElementById('ss-primary-color').value,
+        secondary_color: document.getElementById('ss-secondary-color').value
+    }).then(d => { toast(d.ok?'✓ '+d.msg:'✗ '+d.msg, d.ok?'success':'error'); })
+      .catch(() => toast('请求失败','error'));
+}
+
+function uploadSettingsFile(field, input) {
+    if (!input.files[0]) return;
+    var fd = new FormData();
+    fd.append('field', field);
+    fd.append('file', input.files[0]);
+    fd.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    fetch('/admin/upload/', { method:'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+            toast(d.ok?'✓ '+d.msg:'✗ '+d.msg, d.ok?'success':'error');
+            if (d.ok) setTimeout(()=>location.reload(), 800);
+        })
+        .catch(() => toast('上传失败','error'));
+    input.value = '';
+}
+
+function clearSettingsFile(field) {
+    var key = field === 'logo' ? 'clear_logo' : 'clear_background';
+    var data = {type:'save_site_settings', site_name:'', primary_color:'', secondary_color:''};
+    data[key] = true;
+    apiCall(data)
+        .then(d => { toast(d.ok?'✓ 已清除':'✗ '+d.msg, d.ok?'success':'error'); if(d.ok) setTimeout(()=>location.reload(),800); })
+        .catch(() => toast('请求失败','error'));
+}
+
+// ===== 日志筛选 =====
+function filterLogTable(input, tableId) {
+    applyLogFilters(tableId);
+}
+
+function filterLoginStatus(sel) {
+    applyLogFilters('login-log-table');
+}
+
+function applyLogFilters(tableId) {
+    var table = document.getElementById(tableId);
+    var card = table.closest('.card');
+    var input = card.querySelector('.filter-input');
+    var sel = card.querySelector('.filter-select');
+    var q = input ? input.value.toLowerCase() : '';
+    var v = sel ? sel.value : '';
+    var rows = table.tBodies[0].rows;
+    for (var i = 0; i < rows.length; i++) {
+        var textMatch = !q || rows[i].textContent.toLowerCase().includes(q);
+        var statusMatch = !v || rows[i].dataset.status === v;
+        rows[i].style.display = (textMatch && statusMatch) ? '' : 'none';
+    }
+}
+</script>
+{% endblock %}

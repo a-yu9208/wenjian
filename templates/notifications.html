@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}我的通知{% endblock %}
+
+{% block extra_css %}
+<style>
+.notif-page{max-width:800px;margin:30px auto}
+.notif-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.notif-header h2{margin:0}
+.btn-read-all{background:#3498db;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px}
+.btn-read-all:hover{background:#2980b9}
+.notif-card{background:#fff;border-radius:10px;padding:18px 20px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid #3498db;transition:all .2s}
+.notif-card.read{border-left-color:#ddd;opacity:.7}
+.notif-card .notif-title{font-weight:600;font-size:15px;margin-bottom:4px}
+.notif-card .notif-body{color:#555;font-size:14px;margin-bottom:6px}
+.notif-card .notif-meta{color:#bbb;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.notif-card .mark-read{color:#3498db;cursor:pointer;font-size:12px;border:none;background:none}
+.notif-card .mark-read:hover{text-decoration:underline}
+.unread-dot{display:inline-block;width:8px;height:8px;background:#e74c3c;border-radius:50%;margin-right:6px}
+.empty{text-align:center;padding:60px;color:#bbb}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notif-page">
+    <div class="notif-header">
+        <h2>🔔 我的通知 {% if unread_count %}<span style="font-size:14px;color:#e74c3c">({{ unread_count }}条未读)</span>{% endif %}</h2>
+        {% if unread_count %}
+        <button class="btn-read-all" onclick="markAll()">全部已读</button>
+        {% endif %}
+    </div>
+
+    {% for n in notifications %}
+    <div class="notif-card {% if n.is_read %}read{% endif %}" id="notif-{{ n.id }}">
+        <div class="notif-title">{% if not n.is_read %}<span class="unread-dot"></span>{% endif %}{{ n.title }}</div>
+        <div class="notif-body">{{ n.content }}</div>
+        <div class="notif-meta">
+            <span>{{ n.created_at|date:"Y-m-d H:i" }}</span>
+            {% if not n.is_read %}<button class="mark-read" onclick="markRead({{ n.id }})">标为已读</button>{% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty">📭 暂无通知</div>
+    {% endfor %}
+</div>
+
+<script>
+function getCookie(name){const v=document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)');return v?v.pop():'';}
+
+function markRead(id){
+    fetch('/notifications/read/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':getCookie('csrftoken')},body:'id='+id})
+    .then(()=>{const el=document.getElementById('notif-'+id);el.classList.add('read');el.querySelector('.unread-dot')?.remove();el.querySelector('.mark-read')?.remove();});
+}
+function markAll(){
+    fetch('/notifications/read/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':getCookie('csrftoken')},body:'id=all'})
+    .then(()=>location.reload());
+}
+</script>
+{% endblock %}

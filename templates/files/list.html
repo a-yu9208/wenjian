@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}文件 - {{ site_settings.site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-header {
+    background: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+    border-radius: 14px;
+    padding: 24px 28px;
+    color: #fff;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.page-header h1 { font-size: 20px; font-weight: 700; margin: 0; }
+.page-header .btn { border: none; padding: 8px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; background: rgba(255,255,255,0.2); color: #fff; }
+.page-header .btn:hover { background: rgba(255,255,255,0.35); color: #fff; }
+.page-header .btn-solid { background: #fff; color: #10b981; }
+.page-header .btn-solid:hover { background: rgba(255,255,255,0.9); color: #10b981; }
+
+.toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+.toolbar .input-group { max-width: 360px; flex: 1; }
+
+.type-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.type-pills a {
+    padding: 6px 14px; border-radius: 20px; font-size: 13px; text-decoration: none;
+    color: #64748b; background: #f1f5f9; transition: all 0.2s; font-weight: 500;
+    display: flex; align-items: center; gap: 5px;
+}
+.type-pills a.active { background: var(--primary-color); color: #fff; }
+.type-pills a:hover:not(.active) { background: #e2e8f0; }
+
+/* 文件卡片 */
+.f-card {
+    border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    transition: transform .3s ease, box-shadow .3s ease;
+    cursor: pointer;
+}
+.f-card:hover { transform: translateY(-5px); box-shadow: 0 10px 24px rgba(0,0,0,.12); }
+
+.f-preview {
+    aspect-ratio: 16/10; overflow: hidden; position: relative;
+    display: flex; align-items: center; justify-content: center;
+}
+/* 图片预览 */
+.f-preview img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform .4s ease;
+}
+.f-card:hover .f-preview img { transform: scale(1.05); }
+
+/* 图片查看提示 */
+.f-preview .f-view-hint {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 6px 0; text-align: center;
+    background: linear-gradient(transparent, rgba(0,0,0,.55));
+    color: #fff; font-size: 12px; font-weight: 500;
+    opacity: 0; transition: opacity .3s ease;
+}
+.f-card:hover .f-view-hint { opacity: 1; }
+
+/* 非图片占位 */
+.f-preview-icon {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+}
+.f-preview-icon i { font-size: 40px; opacity: .7; }
+.f-preview-icon span { font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; opacity: .5; }
+
+.f-type-image    .f-preview-icon { background: linear-gradient(135deg, #dbeafe, #e0f2fe); }
+.f-type-document .f-preview-icon { background: linear-gradient(135deg, #ede9fe, #f3e8ff); }
+.f-type-archive  .f-preview-icon { background: linear-gradient(135deg, #fef3c7, #fef9c3); }
+.f-type-audio    .f-preview-icon { background: linear-gradient(135deg, #d1fae5, #dcfce7); }
+.f-type-other    .f-preview-icon { background: linear-gradient(135deg, #f1f5f9, #e2e8f0); }
+
+.f-type-image    .f-preview-icon i { color: #3b82f6; }
+.f-type-document .f-preview-icon i { color: #8b5cf6; }
+.f-type-archive  .f-preview-icon i { color: #f59e0b; }
+.f-type-audio    .f-preview-icon i { color: #10b981; }
+.f-type-other    .f-preview-icon i { color: #94a3b8; }
+
+/* 类型角标 */
+.f-badge {
+    position: absolute; top: 8px; left: 8px;
+    font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 6px; backdrop-filter: blur(4px);
+}
+.f-type-image    .f-badge { background: rgba(59,130,246,.15); color: #2563eb; }
+.f-type-document .f-badge { background: rgba(139,92,246,.15); color: #7c3aed; }
+.f-type-archive  .f-badge { background: rgba(245,158,11,.15); color: #d97706; }
+.f-type-audio    .f-badge { background: rgba(16,185,129,.15); color: #059669; }
+.f-type-other    .f-badge { background: rgba(148,163,184,.15); color: #64748b; }
+
+.f-info { padding: 12px 14px; }
+.f-title {
+    font-size: 13px; font-weight: 600; color: #1e293b;
+    margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.f-meta { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #94a3b8; }
+
+.empty-hero { text-align: center; padding: 80px 20px; }
+.empty-hero .empty-icon { width: 100px; height: 100px; margin: 0 auto 20px; background: linear-gradient(135deg, #f1f5f9, #e2e8f0); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.empty-hero .empty-icon i { font-size: 40px; color: #94a3b8; }
+.empty-hero h3 { color: #475569; font-size: 18px; margin: 0 0 6px; }
+.empty-hero p { color: #94a3b8; font-size: 14px; max-width: 320px; margin: 0 auto 16px; }
+
+/* 复选框样式 */
+.form-check-input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #dee2e6;
+    background-color: #fff;
+    box-shadow: none;
+}
+.form-check-input[type="checkbox"]:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+.form-check-input[type="checkbox"]:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 页头 -->
+<div class="page-header">
+    <h1><i class="bi bi-folder2-open"></i> 文件中心</h1>
+    <div>
+        {% if user.is_authenticated %}
+        <a href="{% url 'files:upload' %}" class="btn btn-solid"><i class="bi bi-cloud-upload"></i> 上传文件</a>
+        {% else %}
+        <a href="{% url 'accounts:login' %}" class="btn"><i class="bi bi-box-arrow-in-right"></i> 登录上传</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 分类筛选 -->
+<div class="type-pills">
+    <a href="?type=all" class="{% if file_type == 'all' %}active{% endif %}"><i class="bi bi-grid"></i> 全部</a>
+    <a href="?type=image" class="{% if file_type == 'image' %}active{% endif %}"><i class="bi bi-image"></i> 图片</a>
+    <a href="?type=document" class="{% if file_type == 'document' %}active{% endif %}"><i class="bi bi-file-earmark-text"></i> 文档</a>
+    <a href="?type=archive" class="{% if file_type == 'archive' %}active{% endif %}"><i class="bi bi-file-earmark-zip"></i> 压缩包</a>
+    <a href="?type=audio" class="{% if file_type == 'audio' %}active{% endif %}"><i class="bi bi-music-note"></i> 音乐</a>
+</div>
+
+<!-- 搜索 -->
+<div class="toolbar">
+    <form method="get" style="flex:1;max-width:400px">
+        <div class="input-group">
+            <input type="text" name="search" class="form-control" placeholder="搜索文件..." value="{{ search_query }}">
+            <input type="hidden" name="type" value="{{ file_type }}">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+            {% if search_query %}
+            <a href="?type={{ file_type }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- 文件卡片网格 -->
+<div class="row">
+    {% for file in files %}
+    <div class="col-lg-3 col-md-4 col-6 mb-4">
+        <div class="f-card f-type-{{ file.file_type }}" onclick="viewFile({{ file.id }})">
+            <div class="f-preview">
+                {% if file.file_type == 'image' %}
+                <img src="{{ file.file.url }}" alt="{{ file.title }}" loading="lazy">
+                <div class="f-view-hint"><i class="bi bi-eye"></i> 点击查看详情</div>
+                {% elif file.file_type == 'document' %}
+                <div class="f-preview-icon"><i class="bi bi-file-earmark-text"></i><span>文档</span></div>
+                {% elif file.file_type == 'archive' %}
+                <div class="f-preview-icon"><i class="bi bi-file-earmark-zip"></i><span>压缩包</span></div>
+                {% elif file.file_type == 'audio' %}
+                <div class="f-preview-icon"><i class="bi bi-music-note-beamed"></i><span>音乐</span></div>
+                {% else %}
+                <div class="f-preview-icon"><i class="bi bi-file-earmark"></i><span>文件</span></div>
+                {% endif %}
+                <span class="f-badge">
+                    {% if file.file_type == 'image' %}图片
+                    {% elif file.file_type == 'document' %}文档
+                    {% elif file.file_type == 'archive' %}压缩包
+                    {% elif file.file_type == 'audio' %}音乐
+                    {% else %}文件{% endif %}
+                </span>
+            </div>
+            <div class="f-info">
+                <h6 class="f-title" title="{{ file.title }}">{{ file.title }}</h6>
+                <div class="f-meta">
+                    <span><i class="bi bi-person"></i> {{ file.uploader.username }}</span>
+                    <span><i class="bi bi-download"></i> {{ file.download_count }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="empty-hero">
+            <div class="empty-icon"><i class="bi bi-folder"></i></div>
+            {% if search_query %}
+            <h3>没有找到相关文件</h3>
+            <p>换个关键词试试，或者浏览全部文件</p>
+            <a href="?type={{ file_type }}" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> 查看全部</a>
+            {% else %}
+            <h3>还没有文件</h3>
+            <p>这里空空如也，快来上传第一个文件吧</p>
+            {% if user.is_authenticated %}
+            <a href="{% url 'files:upload' %}" class="btn btn-primary"><i class="bi bi-cloud-upload"></i> 上传文件</a>
+            {% else %}
+            <a href="{% url 'accounts:login' %}" class="btn btn-primary"><i class="bi bi-box-arrow-in-right"></i> 登录上传</a>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 分页 -->
+{% if files.has_other_pages %}
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if files.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ files.previous_page_number }}&type={{ file_type }}{% if search_query %}&search={{ search_query }}{% endif %}">上一页</a>
+        </li>
+        {% endif %}
+        {% for num in files.paginator.page_range %}
+        {% if files.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% else %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}&type={{ file_type }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% if files.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ files.next_page_number }}&type={{ file_type }}{% if search_query %}&search={{ search_query }}{% endif %}">下一页</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- 文件详情弹窗 -->
+<div class="modal fade" id="fileModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+            <div class="modal-header" id="fileModalHeader" style="border:none;padding:24px 28px 0">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span id="fileTypeTag" class="badge"></span>
+                    </div>
+                    <h5 class="modal-title fw-bold mb-0" id="fileModalTitle" style="font-size:20px"></h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:20px 28px 28px">
+                <div id="fileMeta" style="display:flex;gap:20px;flex-wrap:wrap;padding:14px 18px;background:#f8fafc;border-radius:10px;margin-bottom:20px;font-size:13px;color:#64748b"></div>
+                <div id="filePreview" style="margin-bottom:20px"></div>
+                <div id="fileDesc" style="margin-bottom:20px;display:none">
+                    <div style="font-size:13px;font-weight:600;color:#475569;margin-bottom:6px"><i class="bi bi-text-paragraph"></i> 文件描述</div>
+                    <div id="fileDescText" style="font-size:14px;color:#64748b;line-height:1.7;padding:12px 16px;background:#f8fafc;border-radius:8px"></div>
+                </div>
+                <div id="fileActions" class="d-flex gap-2 flex-wrap"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var fileTypeMap = {
+    'image': {icon: 'bi-image', label: '图片', color: '#3b82f6', bg: '#dbeafe'},
+    'document': {icon: 'bi-file-earmark-text', label: '文档', color: '#8b5cf6', bg: '#ede9fe'},
+    'archive': {icon: 'bi-file-earmark-zip', label: '压缩包', color: '#f59e0b', bg: '#fef3c7'},
+    'audio': {icon: 'bi-music-note-beamed', label: '音乐', color: '#10b981', bg: '#d1fae5'},
+    'other': {icon: 'bi-file-earmark', label: '文件', color: '#64748b', bg: '#f1f5f9'}
+};
+
+function viewFile(fileId) {
+    $.ajax({
+        url: '/files/' + fileId + '/',
+        data: {format: 'json'},
+        success: function(d) {
+            var t = fileTypeMap[d.file_type] || fileTypeMap['other'];
+            $('#fileModalTitle').text(d.title);
+            $('#fileTypeTag').html('<i class="bi ' + t.icon + '"></i> ' + t.label)
+                .css({background: t.bg, color: t.color, fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px'});
+
+            $('#fileMeta').html(
+                '<div><i class="bi bi-person" style="color:#3b82f6"></i> <span style="color:#334155;font-weight:500">' + d.uploader + '</span></div>' +
+                '<div><i class="bi bi-calendar3" style="color:#8b5cf6"></i> ' + d.created_at + '</div>' +
+                '<div><i class="bi bi-download" style="color:#10b981"></i> ' + d.download_count + ' 次下载</div>' +
+                '<div><i class="bi bi-hdd" style="color:#f59e0b"></i> ' + d.file_size_mb + ' MB</div>'
+            );
+
+            var preview = '';
+            if (d.file_type === 'image') {
+                preview = '<div style="text-align:center;background:#f8fafc;border-radius:10px;padding:16px;overflow:hidden">' +
+                    '<img src="' + d.file_url + '" style="max-width:100%;max-height:500px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1)" alt="' + d.title + '"></div>';
+            } else if (d.file_type === 'document' && d.file_content) {
+                preview = '<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">' +
+                    '<div style="padding:10px 16px;background:#f8fafc;font-size:13px;font-weight:600;color:#475569;border-bottom:1px solid #e2e8f0"><i class="bi bi-eye"></i> 内容预览</div>' +
+                    '<pre style="max-height:400px;overflow-y:auto;margin:0;padding:16px;font-size:13px;line-height:1.6;background:#fff">' +
+                    $('<span>').text(d.file_content).html() + '</pre></div>';
+            } else if (d.file_type === 'audio') {
+                preview = '<div style="padding:20px;background:#f8fafc;border-radius:10px;text-align:center">' +
+                    '<i class="bi bi-music-note-beamed" style="font-size:48px;color:#10b981;display:block;margin-bottom:12px"></i>' +
+                    '<audio controls style="width:100%;max-width:500px"><source src="' + d.file_url + '">浏览器不支持音频播放</audio></div>';
+            } else {
+                preview = '<div style="text-align:center;padding:32px;background:#f8fafc;border-radius:10px">' +
+                    '<i class="bi ' + t.icon + '" style="font-size:64px;color:' + t.color + ';display:block;margin-bottom:8px"></i>' +
+                    '<div style="font-size:13px;color:#94a3b8">下载后查看文件内容</div></div>';
+            }
+            $('#filePreview').html(preview);
+
+            if (d.description) { $('#fileDescText').text(d.description); $('#fileDesc').show(); } else { $('#fileDesc').hide(); }
+
+            var actions = '<a href="/files/' + fileId + '/download/" class="btn btn-primary" style="border-radius:8px;padding:8px 20px;font-weight:600;font-size:14px">' +
+                '<i class="bi bi-download"></i> 下载文件</a>';
+            if (d.is_uploader || d.is_admin) {
+                actions += '<button class="btn btn-outline-danger" style="border-radius:8px;padding:8px 20px;font-size:14px" onclick="deleteFile(' + fileId + ')">' +
+                    '<i class="bi bi-trash"></i> 删除</button>';
+            }
+            $('#fileActions').html(actions);
+            $('#fileModal').modal('show');
+        }
+    });
+}
+
+function deleteFile(fileId) {
+    if (!confirm('确定要删除这个文件吗？')) return;
+    $.ajax({
+        url: '/files/' + fileId + '/delete/',
+        method: 'DELETE',
+        headers: {'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()},
+        success: function() { location.reload(); },
+        error: function(xhr) { alert('删除失败：' + (xhr.responseJSON ? xhr.responseJSON.error : '未知错误')); }
+    });
+}
+</script>
+{% endblock %}

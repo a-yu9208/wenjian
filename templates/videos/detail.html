@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ video.title }} - {{ site_settings.site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* 影院风格播放器容器 */
+.player-wrap {
+    background: #0f172a;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}
+.player-inner {
+    max-width: 960px;
+    margin: 0 auto;
+}
+.player-inner video {
+    width: 100%;
+    display: block;
+    background: #000;
+}
+
+/* 视频信息区 */
+.v-detail-info {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.v-detail-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 12px;
+    line-height: 1.4;
+}
+.v-detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 13px;
+    color: #94a3b8;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 16px;
+}
+.v-detail-meta span { display: flex; align-items: center; gap: 5px; }
+.v-detail-desc {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+.v-actions { display: flex; gap: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 返回 -->
+<div class="mb-3">
+    <a href="{% url 'videos:index' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> 返回
+    </a>
+    {% if is_uploader or is_admin %}
+    <button class="btn btn-outline-danger btn-sm float-end" onclick="deleteVideo({{ video.id }})">
+        <i class="bi bi-trash"></i> 删除
+    </button>
+    {% endif %}
+</div>
+
+<!-- 播放器 -->
+<div class="player-wrap">
+    <div class="player-inner">
+        <video id="videoPlayer" controls controlsList="nodownload" preload="metadata"
+               {% if video.thumbnail %}poster="{{ video.thumbnail.url }}"{% endif %}>
+            <source src="{% url 'videos:play' video.id %}" type="video/mp4">
+            您的浏览器不支持视频播放。
+        </video>
+    </div>
+</div>
+
+<!-- 视频信息 -->
+<div class="v-detail-info">
+    <h1 class="v-detail-title">{{ video.title }}</h1>
+    <div class="v-detail-meta">
+        <span><i class="bi bi-person-circle"></i> {{ video.uploader.username }}</span>
+        <span><i class="bi bi-eye"></i> {{ video.view_count }} 次观看</span>
+        <span><i class="bi bi-calendar3"></i> {{ video.created_at|date:"Y-m-d" }}</span>
+        {% if video.duration %}
+        <span><i class="bi bi-clock"></i> {{ video.get_duration_formatted }}</span>
+        {% endif %}
+    </div>
+    {% if video.description %}
+    <div class="v-detail-desc">{{ video.description }}</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var v = document.getElementById('videoPlayer');
+    v.addEventListener('error', function() {
+        alert('视频加载失败，请刷新重试');
+    });
+});
+
+function deleteVideo(id) {
+    if (!confirm('确定要删除这个视频吗？')) return;
+    $.ajax({
+        url: '/videos/' + id + '/delete/',
+        method: 'DELETE',
+        success: function() { alert('已删除'); window.location.href = '/'; },
+        error: function(xhr) { alert('删除失败：' + (xhr.responseJSON ? xhr.responseJSON.error : '未知错误')); }
+    });
+}
+</script>
+{% endblock %}

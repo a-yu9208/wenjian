@@ -1,0 +1,73 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+.approve-btn, .reject-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+.approve-btn {
+    background-color: #28a745;
+}
+.approve-btn:hover {
+    background-color: #218838;
+}
+.reject-btn {
+    background-color: #dc3545;
+}
+.reject-btn:hover {
+    background-color: #c82333;
+}
+</style>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+function approveFile(id) {
+    if (!confirm('确定要通过此文件审核吗？')) return;
+    
+    $.ajax({
+        url: 'ajax-approve/',
+        method: 'POST',
+        data: {
+            'file_id': id,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(data) {
+            alert('✓ 文件已通过审核');
+            window.location.reload();
+        },
+        error: function(xhr) {
+            alert('✗ 操作失败：' + (xhr.responseJSON?.error || '未知错误'));
+        }
+    });
+}
+
+function rejectFile(id) {
+    if (!confirm('确定要驳回此文件吗？')) return;
+    
+    $.ajax({
+        url: 'ajax-reject/',
+        method: 'POST',
+        data: {
+            'file_id': id,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(data) {
+            alert('✗ 文件已驳回');
+            window.location.reload();
+        },
+        error: function(xhr) {
+            alert('✗ 操作失败：' + (xhr.responseJSON?.error || '未知错误'));
+        }
+    });
+}
+</script>
+{% endblock %}
+
